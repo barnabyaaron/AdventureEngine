@@ -1,0 +1,20 @@
+[
+  {
+    "outputFileName": "app/adventure.min.js",
+    "inputFiles": [
+      "app/adventure.js"
+    ]
+  },
+  {
+    "outputFileName": "app/adventure.bundle.js",
+    "inputFiles": [
+      "app/lib/commands.js",
+      "app/lib/engine.js",
+      "app/lib/items.js",
+      "app/lib/player.js",
+      "app/lib/rooms.js",
+      "app/stories/riddleman.js",
+      "app/adventure.js"
+    ]
+  }
+]

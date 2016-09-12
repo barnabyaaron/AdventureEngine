@@ -1,0 +1,51 @@
+﻿/* Bootstrap ******************************************
+*******************************************************/
+.modal-backgrop.in { opacity: .8; }
+
+/************** scrollbar ***************/
+::-webkit-scrollbar { width: 12px; }
+::-webkit-scrollbar-track { -webkit-box-shadow: inset 0 0 6px rgba(0,0,0,0.3); border-radius: 10px; }
+::-webkit-scrollbar-thumb { border-radius: 10px; -webkit-box-shadow: inset 0 0 6px rgba(0,0,0,0.5); }
+
+
+/* Game Controls ***************************************
+********************************************************/
+.game-modal { width: 90%; height: 90%; }
+.game-modal .modal-content { background-color: #1b1b1b; color: #fff; height: 100%; }
+.game-modal .modal-body { height: 100%; }
+
+#gameDisplay { font-family: "Courier New", Courier, monospace; overflow-y: scroll; overflow-x: hidden; height: 700px; }
+#gameDisplay b { color: #d5f59a; }
+
+#gameInfo { position: absolute; right: 45px; top: 70px; text-align: right; }
+#gameInfo h3 { margin: 5px; }
+
+#gameCoreCommands { position: absolute; bottom: 80px; right: 45px; text-align: right; }
+#gameCoreCommands h3 { margin: 5px; }
+
+#gameCommand { position: absolute; bottom: 20px; }
+#gameInputTxt { background-color: #1b1b1b; border: 0px; color: #d3d3d3; font-family: "Courier New", Courier, monospace; font-size: 12pt; width: 600px;}
+#gameInputTxt:focus { outline:0; }
+
+.gamePlayerBar {
+    background-color: #1b1b1b;
+    border-radius: 10px 10px 0 0;
+	color: #FFF;
+	height: 40px;
+	width: 100%;
+    font-size: 22px;
+    border-bottom: 1px solid #777272;
+    margin-bottom: 15px;
+}
+.gamePlayerBar div { display: inline-block; }
+
+.gameBarRight {
+	float:right;
+    margin: auto 10px;
+}
+.gamePlayerBar .fa { margin: auto 5px; }
+.gamePlayerBar .fa-gavel { color: lightsteelblue; }
+.gamePlayerBar .fa-heart { color: red; }
+
+
+

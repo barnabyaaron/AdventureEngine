@@ -1,0 +1,60 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <title>Adventure Engine</title>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <link href="Content/bootstrap.min.css" rel="stylesheet" />
+    <link href="Content/bootstrap-theme.min.css" rel="stylesheet" />
+    <link href="Content/font-awesome.min.css" rel="stylesheet" />
+    <link href="Content/adventure.css" rel="stylesheet" />
+</head>
+<body>
+    <div class="wrapper text-center">
+        <h1>Adventure Engine</h1>
+
+        <button type="button" class="btn btn-primary btn-lg" data-toggle="modal" data-target="#devGameModal">Start Adventure</button>
+    </div>
+
+    <div class="modal" id="devGameModal" tabindex="-1" role="dialog" aria-labelledby="devGameModalLabel" aria-hidden="true">
+        <div class="modal-dialog game-modal">
+            <div class="modal-content">
+                <div class="modal-body">
+                    <div id="screenContainer">
+                        <div class="gamePlayerBar">
+                            <div>Room: <div id="gameRoom">Unknown</div></div>
+                            <div class="gameBarRight">Health: <div id="gamePlayerHP"></div></div>
+                            <div class="gameBarRight">Attack: <div id="gamePlayerAttack"></div></div>
+                        </div>
+
+                        <div id="gameDisplay">
+                            <div id="gameInfo"></div>
+
+                            <div id="gameCommand">
+                                &gt; <input type="text" id="gameInputTxt" autofocus />
+                            </div>
+
+                            <div id="gameCoreCommands">
+                                <h3>Core Commands</h3>
+                                <b>go [direction]</b>  (example: <b>go north</b>)<br />
+                                <b>[direction]</b>  (example: <b>north</b> or <b>n</b>)<br />
+                                <b>go back</b> - return to previous room<br />
+                                <b>inventory</b>  - view held items<br />
+                                <b>look</b> - look around room<br />
+                                <b>help</b> - help text<br />
+                                <b>restart</b> - restart game
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="Scripts/jquery-3.1.0.min.js"></script>
+    <script src="Scripts/bootstrap.min.js"></script>
+    <script src="app/adventure.bundle.min.js"></script>
+</body>
+</html>
