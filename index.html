@@ -6,6 +6,19 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
+    <script src="Scripts/jquery-3.1.0.min.js"></script>
+    <script src="Scripts/bootstrap.min.js"></script>
+    <script src="Scripts/base64.js"></script>
+
+    <script src="app/adventure.bundle.js"></script>
+
+    <script type='text/javascript'>
+		var oldIE = false;
+    </script>
+    <!--[if lt IE 9]>
+        <script type="text/javascript">oldIE = true;</script>
+    <![endif]-->
+
     <link href="Content/bootstrap.min.css" rel="stylesheet" />
     <link href="Content/bootstrap-theme.min.css" rel="stylesheet" />
     <link href="Content/font-awesome.min.css" rel="stylesheet" />
@@ -15,46 +28,27 @@
     <div class="wrapper text-center">
         <h1>Adventure Engine</h1>
 
-        <button type="button" class="btn btn-primary btn-lg" data-toggle="modal" data-target="#devGameModal">Start Adventure</button>
+        <button id="startGameBtn" type="button" class="btn btn-primary btn-lg">Start Adventure</button>
     </div>
 
-    <div class="modal" id="devGameModal" tabindex="-1" role="dialog" aria-labelledby="devGameModalLabel" aria-hidden="true">
+    <div class="modal" id="devGameModal" tabindex="-1" role="dialog" aria-labelledby="devGameModalLabel" aria-hidden="true" data-focus-on="commandTxt">
         <div class="modal-dialog game-modal">
             <div class="modal-content">
                 <div class="modal-body">
-                    <div id="screenContainer">
-                        <div class="gamePlayerBar">
-                            <div>Room: <div id="gameRoom">Unknown</div></div>
-                            <div class="gameBarRight">Health: <div id="gamePlayerHP"></div></div>
-                            <div class="gameBarRight">Attack: <div id="gamePlayerAttack"></div></div>
-                        </div>
-
-                        <div id="gameDisplay">
-                            <div id="gameInfo"></div>
-
-                            <div id="gameCommand">
-                                &gt; <input type="text" id="gameInputTxt" autofocus />
+                    <div id="gameWrapper">
+                        <div id="saveNotify">saved.</div>
+                        <div id="gameContent">
+                            <div id="gameHeader"></div>
+                            <div id="gameMain"></div>
+                            <div id="gameInput">
+                                <i class="fa fa-chevron-right"></i> <input type="text" id="commandTxt" />
                             </div>
-
-                            <div id="gameCoreCommands">
-                                <h3>Core Commands</h3>
-                                <b>go [direction]</b>  (example: <b>go north</b>)<br />
-                                <b>[direction]</b>  (example: <b>north</b> or <b>n</b>)<br />
-                                <b>go back</b> - return to previous room<br />
-                                <b>inventory</b>  - view held items<br />
-                                <b>look</b> - look around room<br />
-                                <b>help</b> - help text<br />
-                                <b>restart</b> - restart game
-                            </div>
+                            <div id="gameFooter"></div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-
-    <script src="Scripts/jquery-3.1.0.min.js"></script>
-    <script src="Scripts/bootstrap.min.js"></script>
-    <script src="app/adventure.bundle.min.js"></script>
 </body>
 </html>

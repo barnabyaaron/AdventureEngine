@@ -1,4 +1,8 @@
-﻿/* Bootstrap ******************************************
+﻿/* Core ***********************************************
+*******************************************************/
+body { background-color: #000; color: #FFF; }
+
+/* Bootstrap ******************************************
 *******************************************************/
 .modal-backgrop.in { opacity: .8; }
 
@@ -11,41 +15,256 @@
 /* Game Controls ***************************************
 ********************************************************/
 .game-modal { width: 90%; height: 90%; }
-.game-modal .modal-content { background-color: #1b1b1b; color: #fff; height: 100%; }
+.game-modal .modal-content { background-color: #272823; color: #EEE; height: 100%; }
 .game-modal .modal-body { height: 100%; }
 
-#gameDisplay { font-family: "Courier New", Courier, monospace; overflow-y: scroll; overflow-x: hidden; height: 700px; }
-#gameDisplay b { color: #d5f59a; }
+div#saveNotify { position: absolute; top: 15px; right: 20px; background: #272823; opacity: 0; }
+div#gameContent { font-family: "Courier New", Courier, monospace; height: 98%; overflow: hidden; }
 
-#gameInfo { position: absolute; right: 45px; top: 70px; text-align: right; }
-#gameInfo h3 { margin: 5px; }
+div#gameHeader { position: absolute; top: 0px; width: 100%; height: 30px; }
+div#gameMain { position: absolute; top: 40px; width: 70%; height: calc(100% - (30px + 30px + 20px)); overflow: hidden; }
+div#gameInput { position: absolute; bottom: 20px; width: 98%; height: 30px; }
+div#gameFooter { position: absolute; bottom: 0px; width: 98%; height: 20px; }
 
-#gameCoreCommands { position: absolute; bottom: 80px; right: 45px; text-align: right; }
-#gameCoreCommands h3 { margin: 5px; }
+.gameMenu { position: fixed; right: 20px; bottom: 12px; color: #666; z-index: 10; }
+.gameMenu span { cursor: pointer; float: right; margin-left: 20px; }
+.gameMenu span:hover { text-decoration: underline; }
 
-#gameCommand { position: absolute; bottom: 20px; }
-#gameInputTxt { background-color: #1b1b1b; border: 0px; color: #d3d3d3; font-family: "Courier New", Courier, monospace; font-size: 12pt; width: 600px;}
-#gameInputTxt:focus { outline:0; }
+#commandTxt { background-color: #272823; border: 0px; color: #d3d3d3; font-family: "Courier New", Courier, monospace; font-size: 12pt; width: 98%; }
+#commandTxt:focus { outline: 0; }
 
-.gamePlayerBar {
-    background-color: #1b1b1b;
-    border-radius: 10px 10px 0 0;
-	color: #FFF;
-	height: 40px;
+/* Button */
+
+div#gameContent div.button {
+	position: relative;
+	text-align: center;
+	border: 1px solid black;
+	width: 100px;
+	margin-bottom: 5px;
+	padding: 5px 10px;
+	cursor: pointer;
+	-webkit-touch-callout: none;
+	-webkit-user-select: none;
+	-khtml-user-select: none;
+	-moz-user-select: none;
+	-ms-user-select: none;
+	user-select: none;
+}
+
+div#gameContent div.button:hover {
+	text-decoration: underline;
+}
+
+div#gameContent div.button.disabled, div#gameContent div.button.disabled:hover {
+	cursor: default;
+	border-color: #b2b2b2;
+	color: #b2b2b2;
+	text-decoration: none;
+}
+
+div#gameContent div.button div.cooldown {
+	position: absolute;
+	top: 0px;
+	left: 0px;
+	z-index: -1;
+	height: 100%;
+	background-color: #DDDDDD;
+}
+
+
+/* Notifications */
+div#gameNotifications { height: 100%; width: 100%; overflow: hidden; }
+div#gameNotifications div.notification { margin-bottom: 10px; }
+div#notifyGradient { position: absolute; top: 0px; left: 0px; height: 100%; width: 100%; background-color: #272823; background: -webkit-linear-gradient( rgba(39, 40, 35, 0) 0%, rgba(39, 40, 35, 1) 100% ); background: linear-gradient( rgba(39, 40, 35, 0) 0%, rgba(39, 40, 35, 1) 100% ); filter: alpha( Opacity=0, FinishOpacity=100, Style=1, StartX=0, StartY=0, FinishX=0, FinishY=500 ); }
+
+/* Events */
+
+.eventPanel {
+	background: none repeat scroll 0 0 white;
+	border: 2px solid transparent;
+	left: 250px;
+	padding: 20px;
+	position: absolute;
+	top: 90px;
+	width: 335px;
+	z-index: 20;
+}
+
+body.noMask .eventPanel {
+	background-color: black;
+}
+
+.eventPanel:before {
+	background-color:white;
+	opacity: 0.6;
+	content: " ";
+	height: 700px;
+	left: -252px;
+	position: absolute;
+	top: -75px;
+	width: 920px;
+	z-index: -2;
+}
+
+body.noMask .eventPanel:before {
+	opacity: 0;
+}
+
+.eventPanel:after {
+	position: absolute;
+	top: -2px;
+	left: -2px;
 	width: 100%;
-    font-size: 22px;
-    border-bottom: 1px solid #777272;
-    margin-bottom: 15px;
+	height: 100%;
+	content: " ";
+	border: 2px solid black;
+	box-shadow: 5px 5px 5px #666666;
+	z-index: -2;
 }
-.gamePlayerBar div { display: inline-block; }
 
-.gameBarRight {
-	float:right;
-    margin: auto 10px;
+body.noMask .eventPanel:after {
+	border-color: white;
 }
-.gamePlayerBar .fa { margin: auto 5px; }
-.gamePlayerBar .fa-gavel { color: lightsteelblue; }
-.gamePlayerBar .fa-heart { color: red; }
+
+.eventPanel .button {
+	float:left;
+	margin-right: 20px;
+}
+
+body.noMask .eventPanel .button {
+	border-color: white;
+	color: white;
+}
+
+.eventTitle {
+	display: inline-block;
+	font-weight: bold;
+	position: absolute;
+	top: -12px;
+}
+
+body.noMask .eventTitle {
+	color: white;
+}
+
+.eventTitle:after {
+	background-color: white;
+	bottom: 32%;
+	content: " ";
+	height: 5px;
+	left: 0;
+	position: absolute;
+	width: 100%;
+	z-index: -1;
+}
+
+body.noMask .eventTitle:after {
+	background-color: black;
+}
+
+#description {
+	position: relative;
+	min-height: 100px;
+}
+
+#description textarea {
+	width: 100%;
+	height: 225px;
+}
+
+body.noMask #description {
+	color: white;
+}
+
+#description > div {
+	padding-bottom: 20px;
+}
+
+.take-all-button {
+	float: none;
+}
+
+#buttons > .button {
+	margin: 0 5px 5px;
+	margin-right: 15px;
+}
+
+/* Combat! */
+#description div.fighter {
+	padding: 0px;
+	position: absolute;
+	bottom: 15px;
+}
+
+#wanderer {
+	left: 25%;
+}
+
+#enemy {
+	right: 25%;
+}
+
+.hp {
+	position: absolute;
+	top: -15px;
+	margin-left: -50%;
+}
+
+#description .bullet {
+	padding: 0px 20px 0px 20px;
+	bottom: 25px;
+	position: absolute;
+	height: 1px;
+	line-height: 1px;
+}
+
+.damageText {
+	position: absolute;
+	bottom: 15px;
+	left: 50%;
+	margin-left: -50%;
+}
+
+#lootButtons {
+	padding-bottom: 0px !important;
+	margin: 20px 0 0 5px;
+	position: relative;
+}
+
+#lootButtons:before {
+	content: "take:";
+	position: absolute;
+	top: -25px;
+	left: 0px;
+}
+
+#dropMenu {
+	background: none repeat scroll 0 0 white;
+	border: 1px solid black;
+	position: absolute;
+	z-index: 100;
+	padding-top: 5px;
+	text-align: left;
+	box-shadow: -1px 3px 2px #666;
+	cursor: default;
+}
+
+#dropMenu:before {
+	content: "drop:";
+	border-bottom: 1px solid black;
+	display: block;
+	margin-bottom: 5px;
+	padding: 0px 0px 5px 5px;
+}
+
+#dropMenu > div {
+	padding: 0px 5px 5px 5px;
+	cursor: pointer;
+}
+
+#dropMenu > div:hover {
+	text-decoration: underline;
+}
 
 
 

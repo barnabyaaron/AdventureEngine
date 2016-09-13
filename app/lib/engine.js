@@ -13,6 +13,8 @@
 
         topics: {},
 
+        activeRoom: null,
+
         Perks: {
             'boxer': {
                 name: 'boxer',
@@ -69,26 +71,38 @@
                 // @TODO Notify user game doesn't support mobile play.
             }
 
-            Engine.disableSelection();
-
             if (this.options.state != null) {
                 window.State = this.options.state;
             } else {
                 Engine.loadGame();
             }
 
-            // Registers keypress handlers
-            $('#gameInputTxt').off('keydown').keydown(Engine.keyDown);
+            var menu = $('<div>').addClass('gameMenu').appendTo('#gameFooter');
+
+            $('<span>')
+                .addClass('menuBtn')
+                .text('restart.')
+                .click(Engine.confirmDelete)
+                .appendTo(menu);
+            $('<span>')
+                .addClass('menuBtn')
+                .text('save.')
+                .click(Engine.exportImport)
+                .appendTo(menu);
+            
+            $('#commandTxt').on('keypress', Engine.keyPress);
 
             // subscribe to stateUpdates
             $.Dispatch('stateUpdate').subscribe(Engine.handleStateUpdates);
 
-            //$SM.init();               // State Manager
-            //Notifications.init();     // Notifications Handler
+            $SM.init();               // State Manager
+            //Command.init();           // Command Handler
+            Notifications.init();     // Notifications Handler
             //Events.init();            // Events Handler
-            //Room.init();              // Rooms Handler?
-
-            //Engine.travelTo(Room); // @TODO pass starting / state room ?
+            //Rooms.init();             // Rooms Handler
+            //Items.init();             // Items Handler
+            //Player.init();            // Player Handler
+            //Story.init();             // Story Handler
         },
 
         browserValid: function () {
@@ -127,6 +141,106 @@
             }
         },
 
+        exportImport: function() {
+            //Events.startEvent({
+            //    title: _('Export / Import'),
+            //    scenes: {
+            //        start: {
+            //            text: [
+			//				_('export or import save data, for backing up'),
+			//				_('or migrating computers')
+            //            ],
+            //            buttons: {
+            //                'export': {
+            //                    text: _('export'),
+            //                    nextScene: {1: 'inputExport'}
+            //                },
+            //                'import': {
+            //                    text: _('import'),
+            //                    nextScene: {1: 'confirm'}
+            //                },
+            //                'cancel': {
+            //                    text: _('cancel'),
+            //                    nextScene: 'end'
+            //                }
+            //            }
+            //        },
+            //        'inputExport': {
+            //            text: [_('save this.')],
+            //            textarea: Engine.export64(),
+            //            onLoad: function() { Engine.event('progress', 'export'); },
+            //            readonly: true,
+            //            buttons: {
+            //                'done': {
+            //                    text: _('got it'),
+            //                    nextScene: 'end',
+            //                    onChoose: Engine.disableSelection
+            //                }
+            //            }
+            //        },
+            //        'confirm': {
+            //            text: [
+			//				_('are you sure?'),
+			//				_('if the code is invalid, all data will be lost.'),
+			//				_('this is irreversible.')
+            //            ],
+            //            buttons: {
+            //                'yes': {
+            //                    text: _('yes'),
+            //                    nextScene: {1: 'inputImport'},
+            //                    onChoose: Engine.enableSelection
+            //                },
+            //                'no': {
+            //                    text: _('no'),
+            //                    nextScene: {1: 'start'}
+            //                }
+            //            }
+            //        },
+            //        'inputImport': {
+            //            text: [_('put the save code here.')],
+            //            textarea: '',
+            //            buttons: {
+            //                'okay': {
+            //                    text: _('import'),
+            //                    nextScene: 'end',
+            //                    onChoose: Engine.import64
+            //                },
+            //                'cancel': {
+            //                    text: _('cancel'),
+            //                    nextScene: 'end'
+            //                }
+            //            }
+            //        }
+            //    }
+            //});
+        },
+
+        generateExport64: function(){
+            var string64 = Base64.encode(localStorage.gameState);
+            string64 = string64.replace(/\s/g, '');
+            string64 = string64.replace(/\./g, '');
+            string64 = string64.replace(/\n/g, '');
+
+            return string64;
+        },
+
+        export64: function() {
+            Engine.saveGame();
+            Engine.enableSelection();
+            return Engine.generateExport64();
+        },
+
+        import64: function(string64) {
+            Engine.event('progress', 'import');
+            Engine.disableSelection();
+            string64 = string64.replace(/\s/g, '');
+            string64 = string64.replace(/\./g, '');
+            string64 = string64.replace(/\n/g, '');
+            var decodedSave = Base64.decode(string64);
+            localStorage.gameState = decodedSave;
+            location.reload();
+        },
+
         event: function (cat, act) {
             if (typeof ga === 'function') {
                 ga('send', 'event', cat, act);
@@ -134,25 +248,25 @@
         },
 
         confirmDelete: function () {
-            Events.startEvent({
-                title: _('Restart?'),
-                scenes: {
-                    start: {
-                        text: [_('restart the game?')],
-                        buttons: {
-                            'yes': {
-                                text: _('yes'),
-                                nextScene: 'end',
-                                onChoose: Engine.deleteSave
-                            },
-                            'no': {
-                                text: _('no'),
-                                nextScene: 'end'
-                            }
-                        }
-                    }
-                }
-            });
+            //Events.startEvent({
+            //    title: _('Restart?'),
+            //    scenes: {
+            //        start: {
+            //            text: [_('restart the game?')],
+            //            buttons: {
+            //                'yes': {
+            //                    text: _('yes'),
+            //                    nextScene: 'end',
+            //                    onChoose: Engine.deleteSave
+            //                },
+            //                'no': {
+            //                    text: _('no'),
+            //                    nextScene: 'end'
+            //                }
+            //            }
+            //        }
+            //    }
+            //});
         },
 
         deleteSave: function (noReload) {
@@ -174,28 +288,26 @@
                 return v.toString(16);
             });
         },
-
-        activeModule: null,
-
-        // @TODO travelTo
-
+        
         log: function (msg) {
             if (this._log) {
                 console.log(msg);
             }
         },
 
-        keyDown: function (e) {
-            // @TODO update to detect only Enter Key.
+        keyLock: false,
 
-            e = e || window.event;
-            if (!Engine.keyPressed && !Engine.keyLock) {
-                Engine.pressed = true;
-                if (Engine.activeModule.keyDown) {
-                    Engine.activeModule.keyDown(e);
+        keyPress: function (event) {
+            if (event.which === 13)
+            {
+                event.preventDefault(); // Prevent Enter from submitting form.
+                if (!Engine.keyLock) {
+                    Notifications.notify("> " + $('#commandTxt').val());
+                    //Command.trigger($('#commandTxt').val());
                 }
+
+                $('#commandTxt').val('');
             }
-            return jQuery.inArray(e.keycode, [37, 38, 39, 40]) < 0;
         },
 
         disableSelection: function () {
@@ -237,6 +349,14 @@
 
         }
     };
+
+    function eventNullifier(e) {
+        return $(e.target).hasClass('menuBtn');
+    }
+
+    function eventPassthrough(e) {
+        return true;
+    }
 })();
 
 function scrollByX(elem, x) {
@@ -261,6 +381,10 @@ $.Dispatch = function (id) {
     return topic;
 };
 
-$(function () {
-    Engine.init();
+$(document).ready(function () {
+    $('#startGameBtn').click(function () {
+        Engine.init();
+
+        $('#devGameModal').modal('show');
+    });
 });
