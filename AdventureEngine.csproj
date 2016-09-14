@@ -70,16 +70,13 @@
     <Content Include="app\adventure.bundle.min.js">
       <DependentUpon>adventure.bundle.js</DependentUpon>
     </Content>
-    <Content Include="app\adventure.js" />
-    <Content Include="app\adventure.min.js">
-      <DependentUpon>adventure.js</DependentUpon>
-    </Content>
-    <Content Include="app\lib\commands.js" />
+    <Content Include="app\lib\button.js" />
     <Content Include="app\lib\engine.js" />
+    <Content Include="app\lib\events.js" />
     <Content Include="app\lib\items.js" />
+    <Content Include="app\lib\notifications.js" />
     <Content Include="app\lib\player.js" />
-    <Content Include="app\lib\rooms.js" />
-    <Content Include="app\stories\riddleman.js" />
+    <Content Include="app\lib\state_manager.js" />
     <Content Include="Content\adventure.css" />
     <Content Include="Content\bootstrap-theme.css" />
     <Content Include="Content\bootstrap-theme.min.css" />

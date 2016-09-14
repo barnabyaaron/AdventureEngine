@@ -26,11 +26,6 @@
                 desc: 'do max damage in hand to hand combat',
                 notify: 'learned to fight effectively without weapons'
             },
-            'slow metabolism': {
-                name: 'slow metabolism',
-                desc: 'go twice as far without eating',
-                notify: 'learned how to ignore the hunger'
-            },
             'evasive': {
                 name: 'evasive',
                 desc: 'dodge attacks more effectively',
@@ -45,11 +40,6 @@
                 name: 'stealthy',
                 desc: 'better avoid conflict',
                 notify: 'learned how to not be seen'
-            },
-            'gastronome': {
-                name: 'gatrononome',
-                desc: 'restores more health when eating',
-                notify: 'learned to make the most of food'
             }
         },
 
@@ -96,13 +86,10 @@
             $.Dispatch('stateUpdate').subscribe(Engine.handleStateUpdates);
 
             $SM.init();               // State Manager
-            //Command.init();           // Command Handler
             Notifications.init();     // Notifications Handler
-            //Events.init();            // Events Handler
-            //Rooms.init();             // Rooms Handler
-            //Items.init();             // Items Handler
-            //Player.init();            // Player Handler
-            //Story.init();             // Story Handler
+            Events.init();            // Events Handler
+            Player.init();            // Player Handler
+            Items.init();             // Items Handler
         },
 
         browserValid: function () {
@@ -142,77 +129,77 @@
         },
 
         exportImport: function() {
-            //Events.startEvent({
-            //    title: _('Export / Import'),
-            //    scenes: {
-            //        start: {
-            //            text: [
-			//				_('export or import save data, for backing up'),
-			//				_('or migrating computers')
-            //            ],
-            //            buttons: {
-            //                'export': {
-            //                    text: _('export'),
-            //                    nextScene: {1: 'inputExport'}
-            //                },
-            //                'import': {
-            //                    text: _('import'),
-            //                    nextScene: {1: 'confirm'}
-            //                },
-            //                'cancel': {
-            //                    text: _('cancel'),
-            //                    nextScene: 'end'
-            //                }
-            //            }
-            //        },
-            //        'inputExport': {
-            //            text: [_('save this.')],
-            //            textarea: Engine.export64(),
-            //            onLoad: function() { Engine.event('progress', 'export'); },
-            //            readonly: true,
-            //            buttons: {
-            //                'done': {
-            //                    text: _('got it'),
-            //                    nextScene: 'end',
-            //                    onChoose: Engine.disableSelection
-            //                }
-            //            }
-            //        },
-            //        'confirm': {
-            //            text: [
-			//				_('are you sure?'),
-			//				_('if the code is invalid, all data will be lost.'),
-			//				_('this is irreversible.')
-            //            ],
-            //            buttons: {
-            //                'yes': {
-            //                    text: _('yes'),
-            //                    nextScene: {1: 'inputImport'},
-            //                    onChoose: Engine.enableSelection
-            //                },
-            //                'no': {
-            //                    text: _('no'),
-            //                    nextScene: {1: 'start'}
-            //                }
-            //            }
-            //        },
-            //        'inputImport': {
-            //            text: [_('put the save code here.')],
-            //            textarea: '',
-            //            buttons: {
-            //                'okay': {
-            //                    text: _('import'),
-            //                    nextScene: 'end',
-            //                    onChoose: Engine.import64
-            //                },
-            //                'cancel': {
-            //                    text: _('cancel'),
-            //                    nextScene: 'end'
-            //                }
-            //            }
-            //        }
-            //    }
-            //});
+            Events.startEvent({
+                title: 'Export / Import',
+                scenes: {
+                    start: {
+                        text: [
+							'export or import save data, for backing up',
+							'or migrating computers'
+                        ],
+                        buttons: {
+                            'export': {
+                                text: 'export',
+                                nextScene: {1: 'inputExport'}
+                            },
+                            'import': {
+                                text: 'import',
+                                nextScene: {1: 'confirm'}
+                            },
+                            'cancel': {
+                                text: 'cancel',
+                                nextScene: 'end'
+                            }
+                        }
+                    },
+                    'inputExport': {
+                        text: ['save this.'],
+                        textarea: Engine.export64(),
+                        onLoad: function() { Engine.event('progress', 'export'); },
+                        readonly: true,
+                        buttons: {
+                            'done': {
+                                text: 'got it',
+                                nextScene: 'end',
+                                onChoose: Engine.disableSelection
+                            }
+                        }
+                    },
+                    'confirm': {
+                        text: [
+							'are you sure?',
+							'if the code is invalid, all data will be lost.',
+							'this is irreversible.'
+                        ],
+                        buttons: {
+                            'yes': {
+                                text: 'yes',
+                                nextScene: {1: 'inputImport'},
+                                onChoose: Engine.enableSelection
+                            },
+                            'no': {
+                                text: 'no',
+                                nextScene: {1: 'start'}
+                            }
+                        }
+                    },
+                    'inputImport': {
+                        text: ['put the save code here.'],
+                        textarea: '',
+                        buttons: {
+                            'okay': {
+                                text: 'import',
+                                nextScene: 'end',
+                                onChoose: Engine.import64
+                            },
+                            'cancel': {
+                                text: 'cancel',
+                                nextScene: 'end'
+                            }
+                        }
+                    }
+                }
+            });
         },
 
         generateExport64: function(){
@@ -248,37 +235,43 @@
         },
 
         confirmDelete: function () {
-            //Events.startEvent({
-            //    title: _('Restart?'),
-            //    scenes: {
-            //        start: {
-            //            text: [_('restart the game?')],
-            //            buttons: {
-            //                'yes': {
-            //                    text: _('yes'),
-            //                    nextScene: 'end',
-            //                    onChoose: Engine.deleteSave
-            //                },
-            //                'no': {
-            //                    text: _('no'),
-            //                    nextScene: 'end'
-            //                }
-            //            }
-            //        }
-            //    }
-            //});
+            Events.startEvent({
+                title: 'Restart?',
+                scenes: {
+                    start: {
+                        text: ['restart the game?'],
+                        buttons: {
+                            'yes': {
+                                text: 'yes',
+                                nextScene: 'end',
+                                onChoose: Engine.deleteSave
+                            },
+                            'no': {
+                                text: 'no',
+                                nextScene: 'end'
+                            }
+                        }
+                    }
+                }
+            });
         },
 
         deleteSave: function (noReload) {
+            Engine.GAME_OVER = false;
+
             if (typeof Storage != 'undefined' && localStorage) {
-                var prestige = Prestige.get();
                 window.State = {};
                 localStorage.clear();
-                Prestige.set(prestige);
             }
+
             if (!noReload) {
                 location.reload();
             }
+        },
+
+        endGame: function() {
+            // @TODO End Gate
+            Engine.confirmDelete();
         },
 
         // Gets a guid

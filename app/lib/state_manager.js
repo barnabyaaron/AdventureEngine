@@ -24,7 +24,6 @@ var StateManager = {
             'timers',       // timer states
             'game',         // mostly settings
             'playStats',    // anything play related: time, loads
-            'previous',     // prestige, score...
             'calldown',     // values for calldown elements
             'story'         // story progress and status
         ];

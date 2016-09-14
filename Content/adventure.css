@@ -33,36 +33,47 @@ div#gameFooter { position: absolute; bottom: 0px; width: 98%; height: 20px; }
 #commandTxt { background-color: #272823; border: 0px; color: #d3d3d3; font-family: "Courier New", Courier, monospace; font-size: 12pt; width: 98%; }
 #commandTxt:focus { outline: 0; }
 
+div.row_key {
+	clear: both;
+	float: left;
+}
+
+div.row_val {
+	float: right;
+}
+
+div.total {
+	font-weight: bold;
+}
+
 /* Button */
 
-div#gameContent div.button {
-	position: relative;
-	text-align: center;
-	border: 1px solid black;
-	width: 100px;
-	margin-bottom: 5px;
-	padding: 5px 10px;
-	cursor: pointer;
-	-webkit-touch-callout: none;
-	-webkit-user-select: none;
-	-khtml-user-select: none;
-	-moz-user-select: none;
-	-ms-user-select: none;
-	user-select: none;
+div.button { 
+    position: relative; 
+    text-align: center; 
+    border: 1px solid #EEE;
+    width: 100px; 
+    margin-bottom: 5px; 
+    padding: 5px 10px; 
+    cursor: pointer; 
+    -webkit-touch-callout: none; 
+    -webkit-user-select: none; 
+    -khtml-user-select: none; 
+    -moz-user-select: none; 
+    -ms-user-select: none; 
+    user-select: none; 
+}
+div.button:hover { 
+    text-decoration: underline; 
+}
+div.button.disabled, div.button.disabled:hover { 
+    cursor: default; 
+    border-color: #444;
+	color: #444;
+    text-decoration: none; 
 }
 
-div#gameContent div.button:hover {
-	text-decoration: underline;
-}
-
-div#gameContent div.button.disabled, div#gameContent div.button.disabled:hover {
-	cursor: default;
-	border-color: #b2b2b2;
-	color: #b2b2b2;
-	text-decoration: none;
-}
-
-div#gameContent div.button div.cooldown {
+div.button div.cooldown {
 	position: absolute;
 	top: 0px;
 	left: 0px;
@@ -71,59 +82,76 @@ div#gameContent div.button div.cooldown {
 	background-color: #DDDDDD;
 }
 
-
 /* Notifications */
 div#gameNotifications { height: 100%; width: 100%; overflow: hidden; }
 div#gameNotifications div.notification { margin-bottom: 10px; }
 div#notifyGradient { position: absolute; top: 0px; left: 0px; height: 100%; width: 100%; background-color: #272823; background: -webkit-linear-gradient( rgba(39, 40, 35, 0) 0%, rgba(39, 40, 35, 1) 100% ); background: linear-gradient( rgba(39, 40, 35, 0) 0%, rgba(39, 40, 35, 1) 100% ); filter: alpha( Opacity=0, FinishOpacity=100, Style=1, StartX=0, StartY=0, FinishX=0, FinishY=500 ); }
 
+/* Tooltip */
+
+div.tooltip {
+	display: none;
+	padding: 2px 5px;
+	position: absolute;
+	background-color: #171813;
+	border: 1px solid black;
+	box-shadow: -1px 3px 2px #111;
+	z-index: 999;
+}
+
+.tooltip.bottom {
+	top: 30px;
+}
+
+.tooltip.right {
+	left: 2px;
+}
+
+.tooltip.left {
+	right: 0px;
+}
+
+.tooltip.top {
+	bottom: 20px;
+}
+
+*:hover > div.tooltip {
+	display: block;
+}
+
+div.tooltip:hover {
+	display: none !important;
+}
+
+.disabled:hover > div.tooltip, .button.free:hover > div.tooltip {
+	display: none;
+}
+
+#event .button.disabled:hover > div.tooltip {
+	display: block;
+}
+
 /* Events */
 
 .eventPanel {
-	background: none repeat scroll 0 0 white;
 	border: 2px solid transparent;
-	left: 250px;
-	padding: 20px;
-	position: absolute;
-	top: 90px;
-	width: 335px;
-	z-index: 20;
-}
-
-body.noMask .eventPanel {
-	background-color: black;
-}
-
-.eventPanel:before {
-	background-color:white;
-	opacity: 0.6;
-	content: " ";
-	height: 700px;
-	left: -252px;
-	position: absolute;
-	top: -75px;
-	width: 920px;
-	z-index: -2;
-}
-
-body.noMask .eventPanel:before {
-	opacity: 0;
+    left: 50px;
+    position: absolute;
+    top: 60px;
+    width: 92%;
+    z-index: 20;
 }
 
 .eventPanel:after {
-	position: absolute;
-	top: -2px;
-	left: -2px;
-	width: 100%;
-	height: 100%;
-	content: " ";
-	border: 2px solid black;
-	box-shadow: 5px 5px 5px #666666;
-	z-index: -2;
-}
-
-body.noMask .eventPanel:after {
-	border-color: white;
+    background-color: #20211c;
+    position: absolute;
+    top: -1px;
+    left: -2px;
+    width: 100%;
+    height: 100%;
+    content: " ";
+    border: 2px solid #5d5555;
+    z-index: -2;
 }
 
 .eventPanel .button {
@@ -131,61 +159,52 @@ body.noMask .eventPanel:after {
 	margin-right: 20px;
 }
 
-body.noMask .eventPanel .button {
-	border-color: white;
-	color: white;
-}
-
 .eventTitle {
 	display: inline-block;
-	font-weight: bold;
-	position: absolute;
-	top: -12px;
-}
-
-body.noMask .eventTitle {
-	color: white;
+    font-weight: bold;
+    position: relative;
+    border-bottom: 1px solid #635c5c;
+    width: 99%;
+    margin: 0px 5px;
+    padding: 5px 8px;
 }
 
 .eventTitle:after {
-	background-color: white;
 	bottom: 32%;
-	content: " ";
-	height: 5px;
-	left: 0;
-	position: absolute;
-	width: 100%;
-	z-index: -1;
-}
-
-body.noMask .eventTitle:after {
-	background-color: black;
+    content: " ";
+    height: 5px;
+    left: 0;
+    position: absolute;
+    width: 100%;
+    z-index: -1;
 }
 
 #description {
 	position: relative;
-	min-height: 100px;
+    min-height: 70px;
+    padding: 10px;
 }
 
 #description textarea {
 	width: 100%;
-	height: 225px;
-}
-
-body.noMask #description {
-	color: white;
+	height: 150px;
+    color: #000;
 }
 
 #description > div {
-	padding-bottom: 20px;
+	padding-bottom: 10px;
 }
 
 .take-all-button {
 	float: none;
 }
 
+.eventPanel #buttons {
+    
+}
+
 #buttons > .button {
-	margin: 0 5px 5px;
+	margin: -5px 10px 18px;
 	margin-right: 15px;
 }
 

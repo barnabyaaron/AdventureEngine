@@ -8,9 +8,12 @@
   {
     "outputFileName": "app/adventure.bundle.js",
     "inputFiles": [
+      "app/lib/button.js",
       "app/lib/engine.js",
       "app/lib/events.js",
-      "app/lib/nofifications.js",
+      "app/lib/items.js",
+      "app/lib/notifications.js",
+      "app/lib/player.js",
       "app/lib/state_manager.js"
     ]
   }
