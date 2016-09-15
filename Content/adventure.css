@@ -5,6 +5,7 @@ body { background-color: #000; color: #FFF; }
 /* Bootstrap ******************************************
 *******************************************************/
 .modal-backgrop.in { opacity: .8; }
+.clear { clear: both; }
 
 /************** scrollbar ***************/
 ::-webkit-scrollbar { width: 12px; }
@@ -21,7 +22,20 @@ body { background-color: #000; color: #FFF; }
 div#saveNotify { position: absolute; top: 15px; right: 20px; background: #272823; opacity: 0; }
 div#gameContent { font-family: "Courier New", Courier, monospace; height: 98%; overflow: hidden; }
 
-div#gameHeader { position: absolute; top: 0px; width: 100%; height: 30px; }
+div#gameHeader { 
+    position: absolute;
+    top: 0px;
+    width: 98%;
+    height: 30px;
+    border-bottom: 1px solid #4e4e4e; 
+}
+div#gameHeader > div {
+    display: inline-block;
+    width: 20%;
+    margin: 5px;
+}
+
+
 div#gameMain { position: absolute; top: 40px; width: 70%; height: calc(100% - (30px + 30px + 20px)); overflow: hidden; }
 div#gameInput { position: absolute; bottom: 20px; width: 98%; height: 30px; }
 div#gameFooter { position: absolute; bottom: 0px; width: 98%; height: 20px; }
@@ -48,12 +62,10 @@ div.total {
 
 /* Button */
 
-div.button { 
+#gameWrapper div.button { 
     position: relative; 
     text-align: center; 
     border: 1px solid #EEE;
-    width: 100px; 
-    margin-bottom: 5px; 
     padding: 5px 10px; 
     cursor: pointer; 
     -webkit-touch-callout: none; 
@@ -63,17 +75,17 @@ div.button {
     -ms-user-select: none; 
     user-select: none; 
 }
-div.button:hover { 
+#gameWrapper div.button:hover { 
     text-decoration: underline; 
 }
-div.button.disabled, div.button.disabled:hover { 
+#gameWrapper div.button.disabled, #gameWrapper div.button.disabled:hover { 
     cursor: default; 
     border-color: #444;
 	color: #444;
     text-decoration: none; 
 }
 
-div.button div.cooldown {
+#gameWrapper div.button div.cooldown {
 	position: absolute;
 	top: 0px;
 	left: 0px;
@@ -131,13 +143,22 @@ div.tooltip:hover {
 	display: block;
 }
 
+#gamePlayerHeaderPanel {
+    width: 50% !important;
+}
+
+#gamePlayerHeaderPanel span, #gamePlayerHeaderPanel div {
+    display: inline-block;
+    margin-right: 28px;
+}
+
 /* Events */
 
 .eventPanel {
 	border: 2px solid transparent;
     left: 50px;
     position: absolute;
-    top: 60px;
+    top: 75px;
     width: 92%;
     z-index: 20;
 }
@@ -179,57 +200,82 @@ div.tooltip:hover {
     z-index: -1;
 }
 
-#description {
+#eventDescription {
 	position: relative;
     min-height: 70px;
-    padding: 10px;
+    padding: 10px 10px 10px 6px;
 }
 
-#description textarea {
+#eventDescription textarea {
 	width: 100%;
 	height: 150px;
     color: #000;
 }
 
-#description > div {
-	padding-bottom: 10px;
+#eventDescription > div {
+    padding: 5px;
 }
 
 .take-all-button {
 	float: none;
 }
 
-.eventPanel #buttons {
-    
+#eventButtons { 
+    position: relative;
+    bottom: 5px;
 }
 
-#buttons > .button {
+#eventButtons > .button {
 	margin: -5px 10px 18px;
 	margin-right: 15px;
 }
 
 /* Combat! */
-#description div.fighter {
-	padding: 0px;
-	position: absolute;
-	bottom: 15px;
+.eventPanel #combatPanel {
+    position: relative;
+    padding: 7px 0px 25px 0px;
+    margin-bottom: 25px;
+    min-height: 100px;
+    background-color: #272727;
+    border: 1px solid #50504e;
 }
 
-#wanderer {
+.eventPanel .fighterStats .fighterStatsName {
+    font-size: 16px;
+    font-weight: bold;
+}
+
+.eventPanel #gamePlayerStats {
+    position: absolute;
+    left: 5px;
+    border: solid 2px #464645;
+    padding: 10px;
+    width: 20%;
+}
+
+.eventPanel #gameEnemyStats {
+    position: absolute;
+    right: 5px;
+    border: solid 2px #464645;
+    padding: 10px;
+    width: 20%;
+}
+
+#eventDescription div.fighter {
+	position: absolute;
+    padding: 5px;
+    text-align: center;
+}
+
+#gamePlayer {
 	left: 25%;
 }
 
-#enemy {
+#gameEnemy {
 	right: 25%;
 }
 
-.hp {
-	position: absolute;
-	top: -15px;
-	margin-left: -50%;
-}
-
-#description .bullet {
+#eventDescription .bullet {
 	padding: 0px 20px 0px 20px;
 	bottom: 25px;
 	position: absolute;
@@ -239,22 +285,27 @@ div.tooltip:hover {
 
 .damageText {
 	position: absolute;
-	bottom: 15px;
+	bottom: 30px;
 	left: 50%;
 	margin-left: -50%;
 }
 
 #lootButtons {
 	padding-bottom: 0px !important;
-	margin: 20px 0 0 5px;
+	margin: 25px 0px 10px 5px;
 	position: relative;
+    bottom: 5px;
 }
 
 #lootButtons:before {
-	content: "take:";
+	content: "loot:";
 	position: absolute;
-	top: -25px;
+	top: -18px;
 	left: 0px;
+}
+
+#lootButtons .takeETrow {
+    margin-top: 10px;
 }
 
 #dropMenu {

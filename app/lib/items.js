@@ -74,8 +74,14 @@
 
     MiscItems: {
         'laser rifle': {
+            name: 'Laser Rifle',
             type: 'weapon',
             weight: 5
+        },
+        'tv remote': {
+            name: 'TV Remote',
+            type: 'misc',
+            weight: 1
         }
     },
 

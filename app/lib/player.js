@@ -1,7 +1,7 @@
 ﻿var Player = {
 
     BASE_HEALTH: 10,
-    BASE_HIT_CHANGE: 0.8,
+    BASE_HIT_CHANCE: 0.8,
     DEFAULT_BAG_SPACE: 10,
     MEDS_HEAL: 20,
 
@@ -14,13 +14,26 @@
             options
         );
 
-        // @TODO Create player panel
+        // Load Health
+        var pHP = $SM.get('player.health');
+        if (pHP == undefined) pHP = Player.getMaxHealth();
+        Player.setHp(pHP);
 
-        // @TODO Create the inventory panel
-
+        // Load Inventory
         Player.inventory = $SM.get('inventory');
 
+        // @TODO Create player panel
+        var playerPanel = $('<div>').attr('id', 'gamePlayerHeaderPanel').appendTo('#gameHeader');
+        $('<span>').addClass('gamePlayerHeaderTitle').text('Player').appendTo(playerPanel);
 
+        // @TODO Create player stats panel
+        var playerStats = $('<div>').attr('id', 'gamePlayerHeaderStats').appendTo(playerPanel);
+        $('<div>').attr('id', 'gamePlayerHeaderHealthCounter').html("HP: " + Player.health + "/" + Player.getMaxHealth()).appendTo(playerStats);
+        $('<div>').attr('id', 'gamePlayerHeaderInventorySpace').html("Inventory Space: " + Player.getFreeSpace() + "/" + Player.getCapacity()).appendTo(playerStats);
+
+        // @TODO Create the inventory panel
+        var inventoryPanel = $('<div>').attr('id', 'gamePlayerHeaderInventory').appendTo(playerPanel);
+        
         //subscribe to stateUpdates
         $.Dispatch('stateUpdate').subscribe(Player.handleStateUpdates);
     },
@@ -44,6 +57,13 @@
                 }
             }
         }
+    },
+    updatePlayerStats: function () {
+        // Update Health
+        $('#gamePlayerHeaderHealthCounter').html("HP: " + Player.health + "/" + Player.getMaxHealth());
+
+        // Update Inventory Space
+        $('#gamePlayerHeaderInventorySpace').html("Inventory Space: " + Player.getFreeSpace() + "/" + Player.getCapacity()).appendTo(playerStats);
     },
 
     updateInventory: function() {
@@ -90,11 +110,12 @@
 
     setHp: function (hp) {
         if (typeof hp == 'number' && !isNaN(hp)) {
-            World.health = hp;
-            if (World.health > World.getMaxHealth()) {
-                World.health = World.getMaxHealth();
+            Player.health = hp;
+            if (Player.health > Player.getMaxHealth()) {
+                Player.health = Player.getMaxHealth();
             }
-            $('#healthCounter').text(_('hp: {0}/{1}', World.health, World.getMaxHealth()));
+
+            $SM.set('player.health', Player.health);
         }
     },
 
@@ -139,7 +160,10 @@
 
     handleStateUpdates: function (e) {
         if (e.category == 'character' && e.stateName.indexOf('character.perks') === 0) {
-            Path.updatePerks();
+            Player.updatePerks();
         };
+        if (e.category == 'player' && (e.stateName.indexOf('player.health') === 0 || e.stateName.indexOf('inventory') === 0)) {
+            Player.updatePlayerStats();
+        }
     }
 };

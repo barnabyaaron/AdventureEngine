@@ -1,5 +1,6 @@
 ﻿(function () {
     var Engine = window.Engine = {
+        GAME_STARTED: false,
         VERSION: 1.0,
         GAME_OVER: false,
         MAX_STORE: 99999999999999,
@@ -44,6 +45,9 @@
         },
 
         init: function (options) {
+            Engine.GAME_STARTED = $SM.get('game.started', true);
+            if (Engine.GAME_STARTED) return;
+
             this.options = $.extend(
                 this.options,
                 options
@@ -85,11 +89,15 @@
             // subscribe to stateUpdates
             $.Dispatch('stateUpdate').subscribe(Engine.handleStateUpdates);
 
-            $SM.init();               // State Manager
-            Notifications.init();     // Notifications Handler
-            Events.init();            // Events Handler
-            Player.init();            // Player Handler
-            Items.init();             // Items Handler
+            $SM.init();                 // State Manager
+            Notifications.init();       // Notifications Handler
+            Items.init();               // Items Handler
+            Events.init();              // Events Handler
+            Story.init();               // Story Handler
+            Player.init();              // Player Handler
+            
+            Engine.GAME_STARTED = true;
+            $SM.set('game.started', Engine.GAME_STARTED);
         },
 
         browserValid: function () {
@@ -270,8 +278,7 @@
         },
 
         endGame: function() {
-            // @TODO End Gate
-            Engine.confirmDelete();
+            Engine.deleteSave(true);
         },
 
         // Gets a guid
@@ -294,9 +301,9 @@
             if (event.which === 13)
             {
                 event.preventDefault(); // Prevent Enter from submitting form.
-                if (!Engine.keyLock) {
+                if (!Engine.keyLock && !Engine.GAME_OVER) {
                     Notifications.notify("> " + $('#commandTxt').val());
-                    //Command.trigger($('#commandTxt').val());
+                    Commands.trigger($('#commandTxt').val());
                 }
 
                 $('#commandTxt').val('');

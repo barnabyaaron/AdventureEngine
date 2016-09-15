@@ -29,7 +29,7 @@ var Notifications = {
 
     notify: function (text, room, noQueue) {
         if (typeof text == 'undefined') return;
-        if (text.slice(-1) != ".") text += ".";
+
         if (room != null && Engine.activeRoom != room) {
             if (!noQueue) {
                 if (typeof this.notifyQueue[room] == 'undefined') {

@@ -124,8 +124,42 @@ var Button = {
         }
     }
 };
+var Commands = {
+
+    options: {},
+
+    init: function(options) {
+        this.options = $.extend(
+            this.options,
+            options
+        );
+
+        // subscribe to statusUpdates
+        $.Dispatch('stateUpdate').subscribe(Events.handleStateUpdates);
+    },
+
+    trigger: function (command) {
+        // run command
+        
+        switch (command) {
+            case 'fight':
+                Events.triggerFight();
+                break;
+            case 'heal':
+                Player.setHp(Player.getMaxHealth());
+                break;
+        }
+
+    },
+
+    handleStateUpdates: function (e) {
+        // Nothing yet
+    },
+
+};
 (function () {
     var Engine = window.Engine = {
+        GAME_STARTED: false,
         VERSION: 1.0,
         GAME_OVER: false,
         MAX_STORE: 99999999999999,
@@ -170,6 +204,9 @@ var Button = {
         },
 
         init: function (options) {
+            Engine.GAME_STARTED = $SM.get('game.started', true);
+            if (Engine.GAME_STARTED) return;
+
             this.options = $.extend(
                 this.options,
                 options
@@ -211,11 +248,15 @@ var Button = {
             // subscribe to stateUpdates
             $.Dispatch('stateUpdate').subscribe(Engine.handleStateUpdates);
 
-            $SM.init();               // State Manager
-            Notifications.init();     // Notifications Handler
-            Events.init();            // Events Handler
-            Player.init();            // Player Handler
-            Items.init();             // Items Handler
+            $SM.init();                 // State Manager
+            Notifications.init();       // Notifications Handler
+            Items.init();               // Items Handler
+            Events.init();              // Events Handler
+            Story.init();               // Story Handler
+            Player.init();              // Player Handler
+            
+            Engine.GAME_STARTED = true;
+            $SM.set('game.started', Engine.GAME_STARTED);
         },
 
         browserValid: function () {
@@ -396,8 +437,7 @@ var Button = {
         },
 
         endGame: function() {
-            // @TODO End Gate
-            Engine.confirmDelete();
+            Engine.deleteSave(true);
         },
 
         // Gets a guid
@@ -420,9 +460,9 @@ var Button = {
             if (event.which === 13)
             {
                 event.preventDefault(); // Prevent Enter from submitting form.
-                if (!Engine.keyLock) {
+                if (!Engine.keyLock && !Engine.GAME_OVER) {
                     Notifications.notify("> " + $('#commandTxt').val());
-                    //Command.trigger($('#commandTxt').val());
+                    Commands.trigger($('#commandTxt').val());
                 }
 
                 $('#commandTxt').val('');
@@ -528,7 +568,7 @@ var Events = {
         // Build the Event Pool
         Events.EventPool = [].concat(
             Events.Global,
-            Events.Room
+            Events.Story
         );
 
         Events.eventStack = [];
@@ -547,6 +587,18 @@ var Events = {
     delayState: 'wait',
     activeScene: null,
 
+    activeEvent: function () {
+        if (Events.eventStack && Events.eventStack.length > 0) {
+            return Events.eventStack[0];
+        }
+        return null;
+    },
+
+    eventPanel: function () {
+        return Events.activeEvent().eventPanel;
+    },
+
+    // Load an event scene
     loadScene: function (name) {
         Engine.log('loading scene: ' + name);
         Events.activeScene = name;
@@ -567,8 +619,8 @@ var Events = {
             $SM.addM('stores', scene.reward);
         }
 
-        $('#description', Events.eventPanel()).empty();
-        $('#buttons', Events.eventPanel()).empty();
+        $('#eventDescription', Events.eventPanel()).empty();
+        $('#eventButtons', Events.eventPanel()).empty();
         if (scene.combat) {
             Events.startCombat(scene);
         } else {
@@ -576,21 +628,47 @@ var Events = {
         }
     },
 
+    // Story Event
+    startStory: function (scene) {
+        // Write the text
+        var desc = $('#eventDescription', Events.eventPanel());
+        var leaveBtn = false;
+        for (var i in scene.text) {
+            $('<div>').text(scene.text[i]).appendTo(desc);
+        }
+
+        if (scene.textarea != null) {
+            var ta = $('<textarea>').val(scene.textarea).appendTo(desc);
+            if (scene.readonly) {
+                ta.attr('readonly', true);
+            }
+            Engine.autoSelect('#eventDescription textarea');
+        }
+
+        // Draw any loot
+        if (scene.loot) {
+            var takeETbtn = Events.drawLoot(scene.loot);
+        }
+
+        // Draw the buttons
+        leaveBtn = Events.drawButtons(scene);
+
+        Events.allowLeave(takeETbtn, leaveBtn);
+    },
+
+    // Combat Event
     startCombat: function (scene) {
         Engine.event('game event', 'combat');
         Events.won = false;
-        var desc = $('#description', Events.eventPanel());
+        var desc = $('#eventDescription', Events.eventPanel());
 
         $('<div>').text(scene.notification).appendTo(desc);
 
-        // Draw the player
-        Events.createFighterDiv('@', Player.health, Player.getMaxHealth()).attr('id', 'gamePlayer').appendTo(desc);
-
-        // Draw the enemy
-        Events.createFighterDiv(scene.chara, scene.health, scene.health).attr('id', 'gameEnemy').appendTo(desc);
+        // Draw the combat panel
+        Events.createCombatPanel(desc, scene);
 
         // Draw the action buttons
-        var btns = $('#buttons', Events.eventPanel());
+        var btns = $('#eventButtons', Events.eventPanel());
 
         var numWeapons = 0;
         for (var k in Items.Weapons) {
@@ -676,7 +754,7 @@ var Events = {
 
     drawFloatText: function (text, parent) {
         $('<div>').text(text).addClass('damageText').appendTo(parent).animate({
-            'bottom': '50px',
+            'bottom': '100px',
             'opacity': '0'
         },
 		300,
@@ -700,10 +778,10 @@ var Events = {
             Player.setHp(hp);
 
             if (Events.activeEvent()) {
-                var w = $('#gamePlayer');
+                var w = $('#gamePlayerStats');
                 w.data('hp', hp);
                 Events.updateFighterDiv(w);
-                Events.drawFloatText('+' + World.medsHeal(), '#gamePlayer .hp');
+                Events.drawFloatText('+' + Player.medsHeal(), '#gamePlayer');
                 var takeETbutton = Events.setTakeAll();
                 Events.canLeave(takeETbutton);
             }
@@ -775,7 +853,7 @@ var Events = {
 
             var attackFn = weapon.type == 'ranged' ? Events.animateRanged : Events.animateMelee;
             attackFn($('#gamePlayer'), dmg, function () {
-                if ($('#gameEnemy').data('hp') <= 0 && !Events.won) {
+                if ($('#gameEnemyStats').data('hp') <= 0 && !Events.won) {
                     // Success!
                     Events.winFight();
                 }
@@ -788,15 +866,17 @@ var Events = {
         if (fighter.attr('id') == 'gamePlayer') {
             start = { 'left': '50%' };
             end = { 'left': '25%' };
+            enemyStats = $('#gameEnemyStats');
             enemy = $('#gameEnemy');
         } else {
             start = { 'right': '50%' };
             end = { 'right': '25%' };
+            enemyStats = $('#gamePlayerStats');
             enemy = $('#gamePlayer');
         }
 
         fighter.stop(true, true).animate(start, Events._FIGHT_SPEED, function () {
-            var enemyHp = enemy.data('hp');
+            var enemyHp = enemyStats.data('hp');
             var msg = "";
             if (typeof dmg == 'number') {
                 if (dmg < 0) {
@@ -805,23 +885,23 @@ var Events = {
                 } else {
                     msg = '-' + dmg;
                     enemyHp = ((enemyHp - dmg) < 0) ? 0 : (enemyHp - dmg);
-                    enemy.data('hp', enemyHp);
+                    enemyStats.data('hp', enemyHp);
                     if (fighter.attr('id') == 'gameEnemy') {
                         Player.setHp(enemyHp);
                     }
-                    Events.updateFighterDiv(enemy);
+                    Events.updateFighterDiv(enemyStats);
                 }
             } else {
                 if (dmg == 'stun') {
                     msg = 'stunned';
-                    enemy.data('stunned', true);
+                    enemyStats.data('stunned', true);
                     Engine.setTimeout(function () {
-                        enemy.data('stunned', false);
+                        enemyStats.data('stunned', false);
                     }, Events.STUN_DURATION);
                 }
             }
 
-            Events.drawFloatText(msg, $('.hp', enemy));
+            Events.drawFloatText(msg, enemy);
 
             $(this).animate(end, Events._FIGHT_SPEED, callback);
         });
@@ -832,16 +912,18 @@ var Events = {
         if (fighter.attr('id') == 'gamePlayer') {
             start = { 'left': '25%' };
             end = { 'left': '50%' };
+            enemyStats = $('#gameEnemyStats');
             enemy = $('#gameEnemy');
         } else {
             start = { 'right': '25%' };
             end = { 'right': '50%' };
+            enemyStats = $('#gamePlayerStats');
             enemy = $('#gamePlayer');
         }
 
-        $('<div>').css(start).addClass('bullet').text('o').appendTo('#description')
+        $('<div>').css(start).addClass('bullet').text('o').appendTo('#eventDescription')
 				.animate(end, Events._FIGHT_SPEED * 2, 'linear', function () {
-				    var enemyHp = enemy.data('hp');
+				    var enemyHp = enemyStats.data('hp');
 				    var msg = "";
 				    if (typeof dmg == 'number') {
 				        if (dmg < 0) {
@@ -850,23 +932,23 @@ var Events = {
 				        } else {
 				            msg = '-' + dmg;
 				            enemyHp = ((enemyHp - dmg) < 0) ? 0 : (enemyHp - dmg);
-				            enemy.data('hp', enemyHp);
+				            enemyStats.data('hp', enemyHp);
 				            if (fighter.attr('id') == 'gameEnemy') {
 				                Player.setHp(enemyHp);
 				            }
-				            Events.updateFighterDiv(enemy);
+				            Events.updateFighterDiv(enemyStats);
 				        }
 				    } else {
 				        if (dmg == 'stun') {
 				            msg = 'stunned';
-				            enemy.data('stunned', true);
+				            enemyStats.data('stunned', true);
 				            Engine.setTimeout(function () {
-				                enemy.data('stunned', false);
+				                enemyStats.data('stunned', false);
 				            }, Events.STUN_DURATION);
 				        }
 				    }
 
-				    Events.drawFloatText(msg, $('.hp', enemy));
+				    Events.drawFloatText(msg, enemy);
 
 				    $(this).remove();
 				    if (typeof callback == 'function') {
@@ -878,7 +960,7 @@ var Events = {
     enemyAttack: function () {
         var scene = Events.activeEvent().scenes[Events.activeScene];
 
-        if (!$('#gameEnemy').data('stunned')) {
+        if (!$('#gameEnemyStats').data('stunned')) {
             var toHit = scene.hit;
             toHit *= $SM.hasPerk('evasive') ? 0.8 : 1;
             var dmg = -1;
@@ -889,7 +971,7 @@ var Events = {
             var attackFn = scene.ranged ? Events.animateRanged : Events.animateMelee;
 
             attackFn($('#gameEnemy'), dmg, function () {
-                if ($('#gamePlayer').data('hp') <= 0) {
+                if ($('#gamePlayerStats').data('hp') <= 0) {
                     // Failure!
                     clearTimeout(Events._enemyAttackTimer);
                     Events.endEvent();
@@ -909,8 +991,8 @@ var Events = {
                 try {
                     var scene = Events.activeEvent().scenes[Events.activeScene];
                     var leaveBtn = false;
-                    var desc = $('#description', Events.eventPanel());
-                    var btns = $('#buttons', Events.eventPanel());
+                    var desc = $('#eventDescription', Events.eventPanel());
+                    var btns = $('#eventButtons', Events.eventPanel());
                     desc.empty();
                     btns.empty();
                     $('<div>').text(scene.deathMessage).appendTo(desc);
@@ -945,6 +1027,37 @@ var Events = {
                 }
             }, 1000, true);
         });
+    },
+
+    drawLoot: function (lootList) {
+        var desc = $('#eventDescription', Events.eventPanel());
+        var lootButtons = $('<div>').attr({ 'id': 'lootButtons', 'data-legend': 'Loot:' });
+        for (var k in lootList) {
+            var loot = lootList[k];
+            if (Math.random() < loot.chance) {
+                var num = Math.floor(Math.random() * (loot.max - loot.min)) + loot.min;
+                var lootRow = Events.drawLootRow(loot.itemObj.name, num);
+                lootRow.appendTo(lootButtons);
+            }
+        }
+        lootButtons.appendTo(desc);
+        if (lootButtons.children().length > 0) {
+            var takeETrow = $('<div>').addClass('takeETrow');
+            var takeET = new Button.Button({
+                id: 'loot_takeEverything',
+                text: '',
+                cooldown: Events._LEAVE_COOLDOWN,
+                click: Events.takeEverything
+            }).appendTo(takeETrow);
+            $('<span>').insertBefore(takeET.children('.cooldown'));
+            $('<div>').addClass('clear').appendTo(takeETrow);
+            takeETrow.appendTo(lootButtons);
+            Events.setTakeAll(lootButtons);
+        } else {
+            var noLoot = $('<div>').addClass('noLoot').text('nothing to take');
+            noLoot.appendTo(lootButtons);
+        }
+        return takeET || false;
     },
 
     drawDrop: function (btn) {
@@ -1007,7 +1120,7 @@ var Events = {
         var lootRow = $('<div>').attr('id', 'loot_' + id).data('item', name).addClass('lootRow');
         var take = new Button.Button({
             id: 'take_' + id,
-            text: _(name) + ' [' + num + ']',
+            text: name + ' [' + num + ']',
             click: Events.getLoot
         }).addClass('lootTake').data('numLeft', num).appendTo(lootRow);
         take.mouseenter(function () {
@@ -1023,41 +1136,10 @@ var Events = {
         return lootRow;
     },
 
-    drawLoot: function (lootList) {
-        var desc = $('#description', Events.eventPanel());
-        var lootButtons = $('<div>').attr({ 'id': 'lootButtons', 'data-legend': 'take:' });
-        for (var k in lootList) {
-            var loot = lootList[k];
-            if (Math.random() < loot.chance) {
-                var num = Math.floor(Math.random() * (loot.max - loot.min)) + loot.min;
-                var lootRow = Events.drawLootRow(k, num);
-                lootRow.appendTo(lootButtons);
-            }
-        }
-        lootButtons.appendTo(desc);
-        if (lootButtons.children().length > 0) {
-            var takeETrow = $('<div>').addClass('takeETrow');
-            var takeET = new Button.Button({
-                id: 'loot_takeEverything',
-                text: '',
-                cooldown: Events._LEAVE_COOLDOWN,
-                click: Events.takeEverything
-            }).appendTo(takeETrow);
-            $('<span>').insertBefore(takeET.children('.cooldown'));
-            $('<div>').addClass('clear').appendTo(takeETrow);
-            takeETrow.appendTo(lootButtons);
-            Events.setTakeAll(lootButtons);
-        } else {
-            var noLoot = $('<div>').addClass('noLoot').text('nothing to take');
-            noLoot.appendTo(lootButtons);
-        }
-        return takeET || false;
-    },
-
     setTakeAll: function (lootButtons) {
         var lootButtons = lootButtons || $('#lootButtons');
         var canTakeSomething = false;
-        var free = Path.getFreeSpace();
+        var free = Player.getFreeSpace();
         var takeETbutton = lootButtons.find('#loot_takeEverything');
         lootButtons.children('.lootRow').each(function (i) {
             var name = $(this).data('item');
@@ -1161,7 +1243,7 @@ var Events = {
                 curNum = typeof curNum == 'number' ? curNum : 0;
                 curNum++;
                 Player.inventory[name] = curNum;
-                World.updateSupplies();
+                Player.updateSupplies();
 
                 if (!skipButtonSet) {
                     Events.setTakeAll();
@@ -1193,45 +1275,45 @@ var Events = {
         }
     },
 
-    createFighterDiv: function (chara, hp, maxhp) {
-        var fighter = $('<div>').addClass('fighter').text(_(chara)).data('hp', hp).data('maxHp', maxhp).data('refname', chara);
-        $('<div>').addClass('hp').text(hp + '/' + maxhp).appendTo(fighter);
+    createCombatPanel: function (desc, scene) {
+        var combatPanel = $('<div>').attr('id', 'combatPanel').appendTo(desc);
+
+        // Player Stats Panel
+        Events.createFighterStatsDiv('Player', Player.health, Player.getMaxHealth()).attr('id', 'gamePlayerStats').appendTo(combatPanel);
+
+        // Fighters Panel
+        var fPanel = $('<div>').attr('id', 'fightersPanel').appendTo(combatPanel);
+
+        // Draw the player
+        Events.createFighterDiv('Player').attr('id', 'gamePlayer').appendTo(fPanel);
+
+        // Draw the enemy
+        Events.createFighterDiv(scene.enemyName).attr('id', 'gameEnemy').appendTo(fPanel);
+
+        // Enemy Stats Panel
+        Events.createFighterStatsDiv(scene.enemyName, scene.health, scene.health).attr('id', 'gameEnemyStats').appendTo(combatPanel);
+    },
+
+    createFighterDiv: function (name) {
+        var fighter = $('<div>').addClass('fighter').html("<i class='fa fa-male fa-3x'></i><br />" + name);
         return fighter;
+    },
+
+    createFighterStatsDiv: function (name, hp, maxhp) {
+        var fStatsPanel = $('<div>').addClass('fighterStats').data('hp', hp).data('maxHp', maxhp).data('refname', name);
+
+        $('<span>').addClass('fighterStatsName').text(name).appendTo(fStatsPanel);
+        $('<div>').addClass('hp').text(hp + '/' + maxhp).appendTo(fStatsPanel);
+
+        return fStatsPanel;
     },
 
     updateFighterDiv: function (fighter) {
         $('.hp', fighter).text(fighter.data('hp') + '/' + fighter.data('maxHp'));
     },
 
-    startStory: function (scene) {
-        // Write the text
-        var desc = $('#description', Events.eventPanel());
-        var leaveBtn = false;
-        for (var i in scene.text) {
-            $('<div>').text(scene.text[i]).appendTo(desc);
-        }
-
-        if (scene.textarea != null) {
-            var ta = $('<textarea>').val(scene.textarea).appendTo(desc);
-            if (scene.readonly) {
-                ta.attr('readonly', true);
-            }
-            Engine.autoSelect('#description textarea');
-        }
-
-        // Draw any loot
-        if (scene.loot) {
-            var takeETbtn = Events.drawLoot(scene.loot);
-        }
-
-        // Draw the buttons
-        leaveBtn = Events.drawButtons(scene);
-
-        Events.allowLeave(takeETbtn, leaveBtn);
-    },
-
     drawButtons: function (scene) {
-        var btns = $('#buttons', Events.eventPanel());
+        var btns = $('#eventButtons', Events.eventPanel());
         var btnsList = [];
         for (var id in scene.buttons) {
             var info = scene.buttons[id];
@@ -1373,18 +1455,7 @@ var Events = {
         var r = Math.floor(Math.random() * (possibleFights.length));
         Events.startEvent(possibleFights[r]);
     },
-
-    activeEvent: function () {
-        if (Events.eventStack && Events.eventStack.length > 0) {
-            return Events.eventStack[0];
-        }
-        return null;
-    },
-
-    eventPanel: function () {
-        return Events.activeEvent().eventPanel;
-    },
-
+    
     startEvent: function (event, options) {
         if (event) {
             Engine.event('game event', 'event');
@@ -1397,8 +1468,8 @@ var Events = {
                 Events.eventPanel().css('width', options.width);
             }
             $('<div>').addClass('eventTitle').text(Events.activeEvent().title).appendTo(Events.eventPanel());
-            $('<div>').attr('id', 'description').appendTo(Events.eventPanel());
-            $('<div>').attr('id', 'buttons').appendTo(Events.eventPanel());
+            $('<div>').attr('id', 'eventDescription').appendTo(Events.eventPanel());
+            $('<div>').attr('id', 'eventButtons').appendTo(Events.eventPanel());
             Events.loadScene('start');
             $('div#gameWrapper').append(Events.eventPanel());
             Events.eventPanel().animate({ opacity: 1 }, Events._PANEL_FADE, 'linear');
@@ -1556,8 +1627,14 @@ var Items = {
 
     MiscItems: {
         'laser rifle': {
+            name: 'Laser Rifle',
             type: 'weapon',
             weight: 5
+        },
+        'tv remote': {
+            name: 'TV Remote',
+            type: 'misc',
+            weight: 1
         }
     },
 
@@ -1625,7 +1702,7 @@ var Notifications = {
 
     notify: function (text, room, noQueue) {
         if (typeof text == 'undefined') return;
-        if (text.slice(-1) != ".") text += ".";
+
         if (room != null && Engine.activeRoom != room) {
             if (!noQueue) {
                 if (typeof this.notifyQueue[room] == 'undefined') {
@@ -1670,7 +1747,7 @@ var Notifications = {
 var Player = {
 
     BASE_HEALTH: 10,
-    BASE_HIT_CHANGE: 0.8,
+    BASE_HIT_CHANCE: 0.8,
     DEFAULT_BAG_SPACE: 10,
     MEDS_HEAL: 20,
 
@@ -1683,13 +1760,26 @@ var Player = {
             options
         );
 
-        // @TODO Create player panel
+        // Load Health
+        var pHP = $SM.get('player.health');
+        if (pHP == undefined) pHP = Player.getMaxHealth();
+        Player.setHp(pHP);
 
-        // @TODO Create the inventory panel
-
+        // Load Inventory
         Player.inventory = $SM.get('inventory');
 
+        // @TODO Create player panel
+        var playerPanel = $('<div>').attr('id', 'gamePlayerHeaderPanel').appendTo('#gameHeader');
+        $('<span>').addClass('gamePlayerHeaderTitle').text('Player').appendTo(playerPanel);
 
+        // @TODO Create player stats panel
+        var playerStats = $('<div>').attr('id', 'gamePlayerHeaderStats').appendTo(playerPanel);
+        $('<div>').attr('id', 'gamePlayerHeaderHealthCounter').html("HP: " + Player.health + "/" + Player.getMaxHealth()).appendTo(playerStats);
+        $('<div>').attr('id', 'gamePlayerHeaderInventorySpace').html("Inventory Space: " + Player.getFreeSpace() + "/" + Player.getCapacity()).appendTo(playerStats);
+
+        // @TODO Create the inventory panel
+        var inventoryPanel = $('<div>').attr('id', 'gamePlayerHeaderInventory').appendTo(playerPanel);
+        
         //subscribe to stateUpdates
         $.Dispatch('stateUpdate').subscribe(Player.handleStateUpdates);
     },
@@ -1713,6 +1803,13 @@ var Player = {
                 }
             }
         }
+    },
+    updatePlayerStats: function () {
+        // Update Health
+        $('#gamePlayerHeaderHealthCounter').html("HP: " + Player.health + "/" + Player.getMaxHealth());
+
+        // Update Inventory Space
+        $('#gamePlayerHeaderInventorySpace').html("Inventory Space: " + Player.getFreeSpace() + "/" + Player.getCapacity()).appendTo(playerStats);
     },
 
     updateInventory: function() {
@@ -1759,11 +1856,12 @@ var Player = {
 
     setHp: function (hp) {
         if (typeof hp == 'number' && !isNaN(hp)) {
-            World.health = hp;
-            if (World.health > World.getMaxHealth()) {
-                World.health = World.getMaxHealth();
+            Player.health = hp;
+            if (Player.health > Player.getMaxHealth()) {
+                Player.health = Player.getMaxHealth();
             }
-            $('#healthCounter').text(_('hp: {0}/{1}', World.health, World.getMaxHealth()));
+
+            $SM.set('player.health', Player.health);
         }
     },
 
@@ -1808,8 +1906,11 @@ var Player = {
 
     handleStateUpdates: function (e) {
         if (e.category == 'character' && e.stateName.indexOf('character.perks') === 0) {
-            Path.updatePerks();
+            Player.updatePerks();
         };
+        if (e.category == 'player' && (e.stateName.indexOf('player.health') === 0 || e.stateName.indexOf('inventory') === 0)) {
+            Player.updatePlayerStats();
+        }
     }
 };
 /*
@@ -2069,3 +2170,78 @@ var StateManager = {
 
 //alias
 var $SM = StateManager;
+var Story = {
+
+    START_ROOM: 'test',
+
+    activeRoom: null,
+
+    init: function (options) {
+        this.options = $.extend(
+            this.options,
+            options
+        );
+
+        // Set Room
+        var room = $SM.get('story.room');
+        if (room == undefined) room = Story.setDefaultRoom();
+        Story.setRoom(room);
+
+        // Create Story Header
+        var storyPanel = $('<div>').attr('id', 'gameStoryHeaderPanel').appendTo('#gameHeader');
+        $('<span>').addClass('gameStoryHeaderLocation').text('Location: ' + Story.activeRoom).appendTo(storyPanel);
+
+
+        //subscribe to stateUpdates
+        $.Dispatch('stateUpdate').subscribe(Story.handleStateUpdates);
+    },
+
+    setRoom : function(room) {
+        if (room === undefined) return;
+
+        Story.activeRoom = room;
+    },
+
+    setDefaultRoom: function () {
+        $SM.set('story.room', Story.START_ROOM);
+        return Story.START_ROOM;
+    },
+
+    handleStateUpdates: function (e) {
+        if (e.category == 'story' && e.stateName.indexOf('story.room') === 0) {
+            Story.setRoom($SM.get('story.room'));
+        }
+    }
+
+};
+
+Events.Encounters = [
+    {
+        title: 'Combat - Archie',
+        isAvailable: function () {
+            // return turn if even can happen
+            return true;
+        },
+        scenes: {
+            'start': {
+                combat: true,
+                enemy: 'archie',
+                enemyName: 'Archie',
+                deathMessage: 'Archie is dead',
+                damage: 1,
+                hit: 0.5,
+                attackDelay: 2,
+                health: 3,
+                loot: {
+                    'tv remote': {
+                        itemObj: Items.MiscItems['tv remote'],
+                        min: 1,
+                        max: 1,
+                        chance: 1
+                    }
+                },
+                notification: 'A wild Archie runs at you with arms help high'
+            }
+        }
+    }
+];
