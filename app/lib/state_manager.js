@@ -25,7 +25,8 @@ var StateManager = {
             'game',         // mostly settings
             'playStats',    // anything play related: time, loads
             'calldown',     // values for calldown elements
-            'story'         // story progress and status
+            'story',        // story progress and status
+            'rooms'
         ];
 
         for (var which in cats) {

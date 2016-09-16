@@ -67,7 +67,7 @@ var Events = {
 
         // Scene reward
         if (scene.reward) {
-            $SM.addM('stores', scene.reward);
+            Events.getRewards(scene.reward);
         }
 
         $('#eventDescription', Events.eventPanel()).empty();
@@ -76,6 +76,14 @@ var Events = {
             Events.startCombat(scene);
         } else {
             Events.startStory(scene);
+        }
+    },
+
+    getRewards: function (items) {
+        for (var l in items) {
+            var loot = lootList[l];
+
+            Event.takeLoot(l, loot.itemObj, loot.qty);
         }
     },
 
@@ -98,13 +106,11 @@ var Events = {
 
         // Draw any loot
         if (scene.loot) {
-            var takeETbtn = Events.drawLoot(scene.loot);
+            Events.drawLoot(scene.loot);
         }
 
         // Draw the buttons
         leaveBtn = Events.drawButtons(scene);
-
-        Events.allowLeave(takeETbtn, leaveBtn);
     },
 
     // Combat Event
@@ -194,7 +200,7 @@ var Events = {
         }
 
         for (var k in weapon.cost) {
-            if (typeof Player.inventory[k] != 'number' || Player.inventory[k] < weapon.cost[k]) {
+            if (typeof Player.inventory[k].qty != 'number' || Player.inventory[k].qty < weapon.cost[k]) {
                 Button.setDisabled(btn, true);
                 break;
             }
@@ -216,10 +222,10 @@ var Events = {
     },
 
     useMeds: function () {
-        if (Player.inventory['medicine'] > 0) {
-            Player.inventory['medicine']--;
+        if (Player.inventory['medicine'] != undefined && Player.inventory['medicine'].qty > 0) {
+            Player.inventory['medicine'].qty--;
             Player.updateSupplies();
-            if (Player.inventory['medicine'] === 0) {
+            if (Player.inventory['medicine'].qty === 0) {
                 Button.setDisabled($('#meds'), true);
             }
 
@@ -257,16 +263,16 @@ var Events = {
                 var mod = {};
                 var out = false;
                 for (var k in weapon.cost) {
-                    if (typeof Player.inventory[k] != 'number' || Player.inventory[k] < weapon.cost[k]) {
+                    if (Player.inventory[k] != undefined && (typeof Player.inventory[k].qty != 'number' || Player.inventory[k].qty < weapon.cost[k])) {
                         return;
                     }
                     mod[k] = -weapon.cost[k];
-                    if (Player.inventory[k] - weapon.cost[k] < weapon.cost[k]) {
+                    if (Player.inventory[k].qty - weapon.cost[k] < weapon.cost[k]) {
                         out = true;
                     }
                 }
                 for (var k in mod) {
-                    Player.inventory[k] += mod[k];
+                    Player.inventory[k].qty += mod[k];
                 }
                 if (out) {
                     Button.setDisabled(btn, true);
@@ -287,7 +293,7 @@ var Events = {
                         }
                     }
                 }
-                Player.updateSupplies();
+                Player.updateInventory();
             }
             var dmg = -1;
             if (Math.random() <= Player.getHitChance()) {
@@ -313,7 +319,7 @@ var Events = {
     },
 
     animateMelee: function (fighter, dmg, callback) {
-        var start, end, enemy;
+        var start, end, enemyStats, enemy;
         if (fighter.attr('id') == 'gamePlayer') {
             start = { 'left': '50%' };
             end = { 'left': '25%' };
@@ -359,7 +365,7 @@ var Events = {
     },
 
     animateRanged: function (fighter, dmg, callback) {
-        var start, end, enemy;
+        var start, end, enemyStats, enemy;
         if (fighter.attr('id') == 'gamePlayer') {
             start = { 'left': '25%' };
             end = { 'left': '50%' };
@@ -372,8 +378,8 @@ var Events = {
             enemy = $('#gamePlayer');
         }
 
-        $('<div>').css(start).addClass('bullet').text('o').appendTo('#eventDescription')
-				.animate(end, Events._FIGHT_SPEED * 2, 'linear', function () {
+        $('<div>').css(start).addClass('bullet').text('o').appendTo('#fightersPanel')
+				.animate(end, Events._FIGHT_SPEED, 'linear', function () {
 				    var enemyHp = enemyStats.data('hp');
 				    var msg = "";
 				    if (typeof dmg == 'number') {
@@ -402,6 +408,7 @@ var Events = {
 				    Events.drawFloatText(msg, enemy);
 
 				    $(this).remove();
+
 				    if (typeof callback == 'function') {
 				        callback();
 				    }
@@ -409,6 +416,8 @@ var Events = {
     },
 
     enemyAttack: function () {
+        if (Events.activeEvent() == null) return;
+
         var scene = Events.activeEvent().scenes[Events.activeScene];
 
         if (!$('#gameEnemyStats').data('stunned')) {
@@ -448,7 +457,7 @@ var Events = {
                     btns.empty();
                     $('<div>').text(scene.deathMessage).appendTo(desc);
 
-                    var takeETbtn = Events.drawLoot(scene.loot);
+                    Events.drawLoot(scene.loot);
 
                     if (scene.buttons) {
                         // Draw the buttons
@@ -472,7 +481,6 @@ var Events = {
                             Events.createUseMedsButton(0).appendTo(btns);
                         }
                     }
-                    Events.allowLeave(takeETbtn, leaveBtn);
                 } catch (e) {
                     // It is possible to die and win if the timing is perfect. Just let it fail.
                 }
@@ -482,248 +490,44 @@ var Events = {
 
     drawLoot: function (lootList) {
         var desc = $('#eventDescription', Events.eventPanel());
-        var lootButtons = $('<div>').attr({ 'id': 'lootButtons', 'data-legend': 'Loot:' });
-        for (var k in lootList) {
-            var loot = lootList[k];
+        var lootPanel = $('<div>').attr('id', 'eventLootDrops').text('Loot:').appendTo(desc);
+
+
+        for (var l in lootList) {
+            var loot = lootList[l];
+
             if (Math.random() < loot.chance) {
-                var num = Math.floor(Math.random() * (loot.max - loot.min)) + loot.min;
-                var lootRow = Events.drawLootRow(loot.itemObj.name, num);
-                lootRow.appendTo(lootButtons);
-            }
-        }
-        lootButtons.appendTo(desc);
-        if (lootButtons.children().length > 0) {
-            var takeETrow = $('<div>').addClass('takeETrow');
-            var takeET = new Button.Button({
-                id: 'loot_takeEverything',
-                text: '',
-                cooldown: Events._LEAVE_COOLDOWN,
-                click: Events.takeEverything
-            }).appendTo(takeETrow);
-            $('<span>').insertBefore(takeET.children('.cooldown'));
-            $('<div>').addClass('clear').appendTo(takeETrow);
-            takeETrow.appendTo(lootButtons);
-            Events.setTakeAll(lootButtons);
-        } else {
-            var noLoot = $('<div>').addClass('noLoot').text('nothing to take');
-            noLoot.appendTo(lootButtons);
-        }
-        return takeET || false;
-    },
+                var qty = Math.floor(Math.random() * (loot.max - loot.min)) + loot.min;
+                var lootRow = Events.drawLootRow(loot.itemObj, qty);
+                lootRow.appendTo(lootPanel);
 
-    drawDrop: function (btn) {
-        var name = btn.attr('id').substring(5).replace('-', ' ');
-        var needsAppend = false;
-        var weight = Items.getWeight(name);
-        var freeSpace = Player.getFreeSpace();
-        if (weight > freeSpace) {
-            // Draw the drop menu
-            Engine.log('drop menu');
-            if ($('#dropMenu').length) {
-                var dropMenu = $('#dropMenu');
-                $('#dropMenu').empty();
-            } else {
-                var dropMenu = $('<div>').attr({ 'id': 'dropMenu', 'data-legend': 'drop' });
-                needsAppend = true;
+                // Take Loot
+                Events.takeLoot(l, loot.itemObj, qty);
             }
-            for (var k in Player.inventory) {
-                if (name == k) continue;
-                var itemWeight = Items.getWeight(k);
-                if (itemWeight > 0) {
-                    var numToDrop = Math.ceil((weight - freeSpace) / itemWeight);
-                    if (numToDrop > Player.inventory[k]) {
-                        numToDrop = Player.inventory[k];
-                    }
-                    if (numToDrop > 0) {
-                        var dropRow = $('<div>').attr('id', 'drop_' + k.replace(' ', '-'))
-							.text(_(k) + ' x' + numToDrop)
-							.data('thing', k)
-							.data('num', numToDrop)
-							.click(Events.dropStuff)
-							.mouseenter(function (e) {
-							    e.stopPropagation();
-							});
-                        dropRow.appendTo(dropMenu);
-                    }
-                }
-            }
-            $('<div>').attr('id', 'no_drop')
-				.text('nothing')
-				.mouseenter(function (e) {
-				    e.stopPropagation();
-				})
-				.click(function (e) {
-				    e.stopPropagation();
-				    dropMenu.remove();
-				})
-				.appendTo(dropMenu);
-            if (needsAppend) {
-                dropMenu.appendTo(btn);
-            }
-            btn.one("mouseleave", function () {
-                $('#dropMenu').remove();
-            });
         }
     },
 
-    drawLootRow: function (name, num) {
-        var id = name.replace(' ', '-');
-        var lootRow = $('<div>').attr('id', 'loot_' + id).data('item', name).addClass('lootRow');
-        var take = new Button.Button({
-            id: 'take_' + id,
-            text: name + ' [' + num + ']',
-            click: Events.getLoot
-        }).addClass('lootTake').data('numLeft', num).appendTo(lootRow);
-        take.mouseenter(function () {
-            Events.drawDrop(take);
-        });
-        var takeall = new Button.Button({
-            id: 'all_take_' + id,
-            text: 'take ',
-            click: Events.takeAll
-        }).addClass('lootTakeAll').appendTo(lootRow);
-        $('<span>').insertBefore(takeall.children('.cooldown'));
-        $('<div>').addClass('clear').appendTo(lootRow);
+    drawLootRow: function (item, qty) {
+        var lootRow = $('<div>').addClass('eventLootRow').data('item', item.name);
+        $('<span>').text(item.name + ' [' + qty + ']').appendTo(lootRow);
+
         return lootRow;
     },
 
-    setTakeAll: function (lootButtons) {
-        var lootButtons = lootButtons || $('#lootButtons');
-        var canTakeSomething = false;
-        var free = Player.getFreeSpace();
-        var takeETbutton = lootButtons.find('#loot_takeEverything');
-        lootButtons.children('.lootRow').each(function (i) {
-            var name = $(this).data('item');
-            var take = $(this).children('.lootTake').first();
-            var takeAll = $(this).children('.lootTakeAll').first();
-            var numLeft = take.data('numLeft');
-            var num = Math.min(Math.floor(Player.getFreeSpace() / Items.getWeight(name)), numLeft);
-            takeAll.data('numLeft', num);
-            free -= numLeft * Items.getWeight(name);
-            if (num > 0) {
-                takeAll.removeClass('disabled');
-                canTakeSomething = true;
-            } else {
-                takeAll.addClass('disabled');
-            }
-            if (num < numLeft) {
-                takeAll.children('span').first().text(num);
-            } else {
-                takeAll.children('span').first().text('all');
-            }
-        });
-        if (canTakeSomething) {
-            takeETbutton.removeClass('disabled');
+    takeLoot: function (lootID, item, qty) {
+        if (Player.inventory[lootID] != undefined) {
+            // Update Item
+            var curNum = Player.inventory[lootID].qty;
+            curNum = typeof curNum == 'number' ? curNum : 0;
+            var newNum = curNum + qty;
+
+            Player.inventory[lootID].qty = newNum;
         } else {
-            takeETbutton.addClass('disabled');
+            // Add Item
+            Player.inventory[lootID] = item;
+            Player.inventory[lootID].qty = qty;
         }
-        takeETbutton.data('canTakeEverything', (free >= 0) ? true : false);
-        return takeETbutton;
-    },
-
-    allowLeave: function (takeETbtn, leaveBtn) {
-        if (takeETbtn) {
-            if (leaveBtn) {
-                takeETbtn.data('leaveBtn', leaveBtn);
-            }
-            Events.canLeave(takeETbtn);
-        }
-    },
-
-    canLeave: function (btn) {
-        var basetext = 'take everything';
-        var textbox = btn.children('span');
-        var takeAndLeave = (btn.data('leaveBtn')) ? btn.data('canTakeEverything') : false;
-        if (takeAndLeave) {
-            var verb = btn.data('leaveBtn').text() || 'leave';
-            textbox.text(basetext + ' and ' + verb);
-            btn.data('canLeave', true);
-            Button.cooldown(btn);
-        } else {
-            textbox.text(basetext);
-            btn.data('canLeave', false)
-        }
-    },
-
-    dropStuff: function (e) {
-        e.stopPropagation();
-        var btn = $(this);
-        var target = btn.closest('.button');
-        var thing = btn.data('thing');
-        var id = 'take_' + thing.replace(' ', '-');
-        var num = btn.data('num');
-        var lootButtons = $('#lootButtons');
-        Engine.log('dropping ' + num + ' ' + thing);
-
-        var lootBtn = $('#' + id, lootButtons);
-        if (lootBtn.length > 0) {
-            var curNum = lootBtn.data('numLeft');
-            curNum += num;
-            lootBtn.text(_(thing) + ' [' + curNum + ']').data('numLeft', curNum);
-        } else {
-            var lootRow = Events.drawLootRow(thing, num);
-            lootRow.insertBefore($('.takeETrow', lootButtons));
-        }
-        Player.inventory[thing] -= num;
-        Events.getLoot(target);
-        Player.updateSupplies();
-    },
-
-    getLoot: function (btn, skipButtonSet) {
-        var name = btn.attr('id').substring(5).replace('-', ' ');
-        if (btn.data('numLeft') > 0) {
-            var skipButtonSet = skipButtonSet || false;
-            var weight = Items.getWeight(name);
-            var freeSpace = Player.getFreeSpace();
-            if (weight <= freeSpace) {
-                var num = btn.data('numLeft');
-                num--;
-                btn.data('numLeft', num);
-                // #dropMenu gets removed by this.
-                btn.text(name + ' [' + num + ']');
-                if (num === 0) {
-                    Button.setDisabled(btn);
-                    btn.animate({ 'opacity': 0 }, 300, 'linear', function () {
-                        $(this).parent().remove();
-                        if ($('#lootButtons').children().length == 1) {
-                            $('#lootButtons').remove();
-                        }
-                    });
-                }
-                var curNum = Player.inventory[name];
-                curNum = typeof curNum == 'number' ? curNum : 0;
-                curNum++;
-                Player.inventory[name] = curNum;
-                Player.updateSupplies();
-
-                if (!skipButtonSet) {
-                    Events.setTakeAll();
-                }
-            }
-            if (!skipButtonSet) {
-                Events.drawDrop(btn);
-            }
-        }
-    },
-
-    takeAll: function (btn) {
-        var target = $('#' + btn.attr('id').substring(4));
-        for (var k = 0; k < btn.data('numLeft') ; k++) {
-            Events.getLoot(target, true);
-        }
-        Events.setTakeAll();
-    },
-
-    takeEverything: function (btn) {
-        $('#lootButtons').children('.lootRow').each(function (i) {
-            var target = $(this).children('.lootTakeAll').first();
-            if (!target.hasClass('disabled')) {
-                Events.takeAll(target);
-            }
-        });
-        if (btn.data('canLeave')) {
-            btn.data('leaveBtn').click();
-        }
+        Player.updateInventory();
     },
 
     createCombatPanel: function (desc, scene) {
@@ -754,13 +558,17 @@ var Events = {
         var fStatsPanel = $('<div>').addClass('fighterStats').data('hp', hp).data('maxHp', maxhp).data('refname', name);
 
         $('<span>').addClass('fighterStatsName').text(name).appendTo(fStatsPanel);
-        $('<div>').addClass('hp').text(hp + '/' + maxhp).appendTo(fStatsPanel);
+        var hpPanel = $('<div>').addClass('hp').text(hp + '/' + maxhp).appendTo(fStatsPanel);
+        $('<div>').addClass('clear').appendTo(hpPanel);
+        Player.createHPHearts(hp, hpPanel);
 
         return fStatsPanel;
     },
 
     updateFighterDiv: function (fighter) {
-        $('.hp', fighter).text(fighter.data('hp') + '/' + fighter.data('maxHp'));
+        var hpPanel = $('.hp', fighter).text(fighter.data('hp') + '/' + fighter.data('maxHp'));
+        $('<div>').addClass('clear').appendTo(hpPanel);
+        Player.createHPHearts(fighter.data('hp'), hpPanel);
     },
 
     drawButtons: function (scene) {

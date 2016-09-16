@@ -77,6 +77,7 @@
     <Content Include="app\lib\items.js" />
     <Content Include="app\lib\notifications.js" />
     <Content Include="app\lib\player.js" />
+    <Content Include="app\lib\room.js" />
     <Content Include="app\lib\state_manager.js" />
     <Content Include="app\lib\story.js" />
     <Content Include="app\stories\lostIsland\events\encounters.js" />

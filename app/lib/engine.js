@@ -92,6 +92,7 @@
             $SM.init();                 // State Manager
             Notifications.init();       // Notifications Handler
             Items.init();               // Items Handler
+            Room.init();                // Rooms Hander
             Events.init();              // Events Handler
             Story.init();               // Story Handler
             Player.init();              // Player Handler
