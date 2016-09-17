@@ -1,9 +1,9 @@
 ﻿(function () {
     var Engine = window.Engine = {
-        GAME_STARTED: false,
+
         VERSION: 1.0,
+        GAME_STARTED: false,
         GAME_OVER: false,
-        MAX_STORE: 99999999999999,
         SAVE_DISPLAY: 30 * 1000,
 
         options: {
@@ -12,37 +12,7 @@
             log: false
         },
 
-        topics: {},
-
-        activeRoom: null,
-
-        Perks: {
-            'boxer': {
-                name: 'boxer',
-                desc: 'punches do more damage',
-                notify: 'learned to throw punches with purpose'
-            },
-            'martial artist': {
-                name: 'martial artist',
-                desc: 'do max damage in hand to hand combat',
-                notify: 'learned to fight effectively without weapons'
-            },
-            'evasive': {
-                name: 'evasive',
-                desc: 'dodge attacks more effectively',
-                notify: "learned to be where they're not"
-            },
-            'hawkeye': {
-                name: 'hawkeye',
-                desc: 'you notice even the littlest of things',
-                notify: 'learned to look more closely'
-            },
-            'stealthy': {
-                name: 'stealthy',
-                desc: 'better avoid conflict',
-                notify: 'learned how to not be seen'
-            }
-        },
+        topics: {},        
 
         init: function (options) {
             Engine.GAME_STARTED = $SM.get('game.started', true);
@@ -303,8 +273,12 @@
             {
                 event.preventDefault(); // Prevent Enter from submitting form.
                 if (!Engine.keyLock && !Engine.GAME_OVER) {
-                    Notifications.notify("> " + $('#commandTxt').val());
-                    Commands.trigger($('#commandTxt').val());
+                    var cmd = $('#commandTxt').val().toLowerCase();
+
+                    if (cmd != Commands.CHEAT_MODE_COMMAND)
+                        Notifications.notify("> " + cmd);
+
+                    Commands.trigger(cmd);
                 }
 
                 $('#commandTxt').val('');

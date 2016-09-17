@@ -13,15 +13,12 @@
             options
         );
 
-        var playerPanel = $('<div>').attr('id', 'gamePlayerStatsPanel').appendTo('#gameMain');
-        Player.updatePlayerPanel();
-
         // Inventory
         Player.inventory = $SM.get('inventory');
         if (Player.inventory == undefined) Player.inventory = {};
 
-        $('<div>').attr('id', 'gamePlayerInventoryPanel').appendTo('#gameMain');
-        Player.updateInventoryPanel();
+        var playerPanel = $('<div>').attr('id', 'gamePlayerStatsPanel').appendTo('#gameMain');
+        Player.updatePlayerPanel();
         
         //subscribe to stateUpdates
         $.Dispatch('stateUpdate').subscribe(Player.handleStateUpdates);
@@ -40,27 +37,47 @@
 
         var healthPanel = $('<div>').attr('id', 'gamePlayerStatsHealthCounter').html("HP: " + Player.health + "/" + Player.getMaxHealth() + " <br />").appendTo('#gamePlayerStatsPanel');
         Player.createHPHearts(Player.health, healthPanel);
-    },
 
-    updatePerks: function () {
-        if ($SM.get('character.perks')) {
-            var perks = $('#perks');
-            var needsAppend = false;
-            if (perks.length === 0) {
-                needsAppend = true;
-                perks = $('<div>').attr({ 'id': 'perks', 'data-legend': 'perks:' });
-            }
+        $('<div>').addClass('gamePlayerStatsSpacer').text('').appendTo('#gamePlayerStatsPanel'); // Spacer
 
-            for (var k in $SM.get('character.perks')) {
-                var id = 'perk_' + k.replace(' ', '-');
+        // Perks
+        var perksPanel = $('<div>').attr('id', 'gamePlayerStatsPerks').appendTo('#gamePlayerStatsPanel');
+
+        // Header
+        $('<div>').addClass('gamePanelHeader').text('Perks').appendTo(perksPanel);
+
+        if ($SM.get('player.perks')) {
+            for (var p in $SM.get('player.perks')) {
+                var id = 'game_player_perk_' + p.replace(' ', '-');
                 var r = $('#' + id);
-                if ($SM.get('character.perks["' + k + '"]') && r.length === 0) {
-                    r = $('<div>').attr('id', id).addClass('perkRow').appendTo(perks);
-                    $('<div>').addClass('row_key').text(_(k)).appendTo(r);
-                    $('<div>').addClass('tooltip bottom right').text(Engine.Perks[k].desc).appendTo(r);
+
+                if ($SM.get('character.perks["' + p + '"]') && r.length === 0) {
+                    r = $('<div>').attr('id', id).addClass('perkRow').appendTo(perksPanel);
+                    $('<div>').addClass('row_key').text(p).appendTo(r);
+                    $('<div>').addClass('tooltip bottom right').text(Story.activeStory.Perks[p].desc).appendTo(r);
                 }
             }
+        } else {
+            $('<span>').addClass('gamePlayerPerkItem').text('None').appendTo(perksPanel);
         }
+
+        $('<div>').addClass('gamePlayerStatsSpacer').text('').appendTo('#gamePlayerStatsPanel'); // Spacer
+
+        // Inventory
+        var invPanel = $('<div>').attr('id', 'gamePlayerStatsInventory').appendTo('#gamePlayerStatsPanel');
+
+        // Header
+        $('<div>').addClass('gamePanelHeader').text('Inventory').appendTo(invPanel);
+
+        // Inventory Items
+        if (Player.inventory.length > 0) {
+            for (var i in Player.inventory) {
+                $('<span>').addClass('inventoryItem').text(Player.inventory[i].name + ' [' + Player.inventory[i].qty + ']').appendTo(invPanel);
+            }
+        } else {
+            $('<span>').addClass('inventoryItem').text('Empty').appendTo(invPanel);
+        }
+        
     },
 
     updatePlayerStats: function () {
@@ -79,22 +96,10 @@
             $('<i>').addClass('health').addClass('fa').addClass('fa-heart').appendTo(panel);
         }
     },
-    
-    updateInventoryPanel: function () {
-        $('#gamePlayerInventoryPanel').html(''); // Clear
-
-        // Inventory Header
-        $('<div>').addClass('gamePanelHeader').text('Inventory').appendTo('#gamePlayerInventoryPanel');
-
-        // Inventory Items
-        for (var i in Player.inventory) {
-            $('<span>').addClass('inventoryItem').text(Player.inventory[i].name + ' [' + Player.inventory[i].qty + ']').appendTo('#gamePlayerInventoryPanel');
-        }
-    },
 
     updateInventory: function() {
         $SM.set('inventory', Player.inventory);
-        Player.updateInventoryPanel();
+        Player.updatePlayerPanel();
     },
 
     setHp: function (hp) {
@@ -141,8 +146,8 @@
     },
 
     handleStateUpdates: function (e) {
-        if (e.category == 'character' && e.stateName.indexOf('character.perks') === 0) {
-            Player.updatePerks();
+        if (e.category == 'player' && e.stateName.indexOf('player.perks') === 0) {
+            Player.updatePlayerStats();
         };
         if (e.category == 'player' && e.stateName.indexOf('player.health') === 0) {
             Player.updatePlayerStats();

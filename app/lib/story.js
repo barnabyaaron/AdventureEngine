@@ -2,9 +2,15 @@
 
     DEFAULT_STORY: 'LostIsland',
 
-    options: {},
+    options: {
+        inCommandEvent: false,
+        commandEventCallback: null,  /* function */
+        canMove: true
+    },
 
     activeStory: null,
+
+    previousRoom: null,
     activeRoom: null,
 
     init: function (options) {
@@ -37,10 +43,10 @@
         $('#gameRoomPanel').html(''); // Clear
 
         // Header
-        $('<div>').addClass('gamePanelHeader').text(Story.activeStory.STORY_NAME + ' - ' + Story.activeRoom.name).appendTo('#gameRoomPanel');
+        $('<div>').addClass('gamePanelHeader').text(Story.activeStory.STORY_NAME).appendTo('#gameRoomPanel');
+        $('<div>').addClass('gamePanelHeader').css({ 'font-size': '14px' }).text(Story.activeRoom.name).appendTo('#gameRoomPanel');
 
         // Exits
-
         var northExit = Story.activeRoom.exits['north'];
         if (northExit == undefined) northExit = 'None';
         else if (northExit.visited != undefined && northExit.visited) northExit = northExit.name;
@@ -66,6 +72,15 @@
         $('<div>').addClass('roomExitItem').html('<b>West</b> - ' + westExit).appendTo('#gameRoomPanel');
     },
 
+    go: function(direction) {
+
+    },
+
+    look: function() {
+
+    },
+
+
     setRoom: function(room) {
         if (room === undefined) return;
 
@@ -81,6 +96,17 @@
     setDefaultStory: function () {
         $SM.set('story.activeStory', Story.DEFAULT_STORY);
         return Story.DEFAULT_STORY;
+    },
+
+    addStoryEvent: function (event) {
+        // Add event to story events
+        Events.Story.push(event);
+        Events.updateEventPool();
+    },
+
+    addEncounterEvent: function (encounter) {
+        // Add Encounter
+        Events.Encounters.push(encounter);
     },
 
     handleStateUpdates: function (e) {

@@ -80,7 +80,9 @@
     <Content Include="app\lib\room.js" />
     <Content Include="app\lib\state_manager.js" />
     <Content Include="app\lib\story.js" />
-    <Content Include="app\stories\lostIsland\events\encounters.js" />
+    <Content Include="app\stories\events\encounters.js" />
+    <Content Include="app\stories\events\global.js" />
+    <Content Include="app\stories\events\story.js" />
     <Content Include="app\stories\lostIsland\lostIsland.js" />
     <Content Include="Content\adventure.css" />
     <Content Include="Content\bootstrap-theme.css" />

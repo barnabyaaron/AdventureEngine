@@ -19,361 +19,79 @@ body { background-color: #000; color: #FFF; }
 .game-modal .modal-content { background-color: #272823; color: #EEE; height: 100%; }
 .game-modal .modal-body { height: 100%; }
 
-div#saveNotify { position: absolute; top: 15px; right: 20px; background: #272823; opacity: 0; }
-div#gameContent { font-family: "Courier New", Courier, monospace; height: 98%; overflow: hidden; }
+#gameWrapper #saveNotify { position: absolute; top: 15px; right: 20px; background: #272823; opacity: 0; }
+#gameWrapper #gameContent { font-family: "Courier New", Courier, monospace; height: 98%; overflow: hidden; }
 
-#gameRoomPanel {
-    position: absolute;
-    right: 5px;
-    top: 10px;
-    width: 20%;
-    border: 1px solid #545252;
-    padding: 10px;
-    height: 20%;
-}
+#gameWrapper #gameMain { position: absolute; width: 98%; height: calc(100% - 80px); overflow: hidden; }
+#gameWrapper #gameInput { position: absolute; bottom: 20px; width: 98%; height: 30px; }
+#gameWrapper #gameFooter { position: absolute; bottom: 0px; width: 98%; height: 20px; }
 
-#gamePlayerStatsPanel {
-    position: absolute;
-    right: 5px;
-    top: calc(20% + 25px);
-    width: 20%;
-    border: 1px solid #545252;
-    padding: 10px;
-    height: 18%;
-    overflow: hidden;
-}
+#gameWrapper .gameMenu { position: fixed; right: 20px; bottom: 12px; color: #666; z-index: 10; }
+#gameWrapper .gameMenu span { cursor: pointer; float: right; margin-left: 20px; }
+#gameWrapper .gameMenu span:hover { text-decoration: underline; }
 
-#gamePlayerInventoryPanel {
-    position: absolute;
-    right: 5px;
-    top: calc(37% + 50px);
-    width: 20%;
-    border: 1px solid #545252;
-    padding: 10px;
-}
+#gameWrapper #commandTxt { background-color: #272823; border: 0px; color: #d3d3d3; font-family: "Courier New", Courier, monospace; font-size: 12pt; width: 98%; }
+#gameWrapper #commandTxt:focus { outline: 0; }
 
-#gameRoomPanel div, #gamePlayerStatsPanel div, #gamePlayerInventoryPanel div {
-    width: 100%;
-    margin-top: 5px;
-}
+#gameWrapper #gameRoomPanel { position: absolute; right: 5px; top: 10px; width: 21%; border: 1px solid #545252; padding: 10px; height: 20%; }
+#gameWrapper #gamePlayerStatsPanel { position: absolute; right: 5px; top: calc(20% + 25px); width: 21%; border: 1px solid #545252; padding: 10px; }
+#gameWrapper #gamePlayerStatsPanel .gamePanelHeader { font-weight: bold; font-size: 16px; }
+#gameWrapper #gamePlayerStatsPanel .gamePlayerStatsSpacer { height: 10px; }
+#gameWrapper #gameRoomPanel div, #gameWrapper #gamePlayerStatsPanel div { width: 100%; }
 
-.gamePanelHeader {
-    font-weight: bold;
-    font-size: 16px;
-    margin-bottom: 10px;
-}
-
-
-div#gameMain { position: absolute; width: 98%; height: calc(100% - 80px); overflow: hidden; }
-div#gameInput { position: absolute; bottom: 20px; width: 98%; height: 30px; }
-div#gameFooter { position: absolute; bottom: 0px; width: 98%; height: 20px; }
-
-.gameMenu { position: fixed; right: 20px; bottom: 12px; color: #666; z-index: 10; }
-.gameMenu span { cursor: pointer; float: right; margin-left: 20px; }
-.gameMenu span:hover { text-decoration: underline; }
-
-#commandTxt { background-color: #272823; border: 0px; color: #d3d3d3; font-family: "Courier New", Courier, monospace; font-size: 12pt; width: 98%; }
-#commandTxt:focus { outline: 0; }
-
-div.row_key {
-	clear: both;
-	float: left;
-}
-
-div.row_val {
-	float: right;
-}
-
-div.total {
-	font-weight: bold;
-}
+#gameWrapper .fa-heart { color: red; margin-right: 5px; } 
 
 /* Button */
-
-#gameWrapper div.button { 
-    position: relative; 
-    text-align: center; 
-    border: 1px solid #EEE;
-    padding: 5px 10px; 
-    cursor: pointer; 
-    -webkit-touch-callout: none; 
-    -webkit-user-select: none; 
-    -khtml-user-select: none; 
-    -moz-user-select: none; 
-    -ms-user-select: none; 
-    user-select: none; 
-}
-#gameWrapper div.button:hover { 
-    text-decoration: underline; 
-}
-#gameWrapper div.button.disabled, #gameWrapper div.button.disabled:hover { 
-    cursor: default; 
-    border-color: #444;
-	color: #444;
-    text-decoration: none; 
-}
-
-#gameWrapper div.button div.cooldown {
-	position: absolute;
-	top: 0px;
-	left: 0px;
-	z-index: -1;
-	height: 100%;
-	background-color: #DDDDDD;
-}
+#gameWrapper .button { position: relative; text-align: center; border: 1px solid #EEE; padding: 5px 10px; cursor: pointer; -webkit-touch-callout: none; -webkit-user-select: none; -khtml-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none; }
+#gameWrapper .button:hover { text-decoration: underline; }
+#gameWrapper .button.disabled, #gameWrapper .button.disabled:hover { cursor: default; border-color: #444; color: #444; text-decoration: none; }
+#gameWrapper .button .cooldown { position: absolute; top: 0px; left: 0px; z-index: -1; height: 100%; background-color: #DDDDDD; }
 
 /* Notifications */
-div#gameNotifications { height: 100%; width: 100%; overflow: hidden; position: absolute; left: 0px; }
-div#gameNotifications div.notification { margin-bottom: 10px; }
-div#notifyGradient { position: absolute; top: 0px; left: 0px; height: 100%; width: 100%; background-color: #272823; background: -webkit-linear-gradient( rgba(39, 40, 35, 0) 0%, rgba(39, 40, 35, 1) 100% ); background: linear-gradient( rgba(39, 40, 35, 0) 0%, rgba(39, 40, 35, 1) 100% ); filter: alpha( Opacity=0, FinishOpacity=100, Style=1, StartX=0, StartY=0, FinishX=0, FinishY=500 ); }
+#gameWrapper #gameNotifications { height: 100%; width: 100%; overflow: hidden; position: absolute; left: 0px; }
+#gameWrapper #gameNotifications .notification { margin-bottom: 10px; }
+#gameWrapper #notifyGradient { position: absolute; top: 0px; left: 0px; height: 100%; width: 100%; background-color: #272823; background: -webkit-linear-gradient( rgba(39, 40, 35, 0) 0%, rgba(39, 40, 35, 1) 100% ); background: linear-gradient( rgba(39, 40, 35, 0) 0%, rgba(39, 40, 35, 1) 100% ); filter: alpha( Opacity=0, FinishOpacity=100, Style=1, StartX=0, StartY=0, FinishX=0, FinishY=500 ); }
 
 /* Tooltip */
-
-div.tooltip {
-	display: none;
-	padding: 2px 5px;
-	position: absolute;
-	background-color: #171813;
-	border: 1px solid black;
-	box-shadow: -1px 3px 2px #111;
-	z-index: 999;
-}
-
-.tooltip.bottom {
-	top: 30px;
-}
-
-.tooltip.right {
-	left: 2px;
-}
-
-.tooltip.left {
-	right: 0px;
-}
-
-.tooltip.top {
-	bottom: 20px;
-}
-
-*:hover > div.tooltip {
-	display: block;
-}
-
-div.tooltip:hover {
-	display: none !important;
-}
-
-.disabled:hover > div.tooltip, .button.free:hover > div.tooltip {
-	display: none;
-}
-
-#event .button.disabled:hover > div.tooltip {
-	display: block;
-}
-
-#gamePlayerHeaderPanel {
-    width: 55% !important;
-}
-
-#gamePlayerHeaderPanel span, #gamePlayerHeaderPanel div {
-    display: inline-block;
-    margin-right: 28px;
-}
-
-#gameWrapper i.fa-heart {
-    color: red;
-    margin-right: 5px;
-} 
-
-#eventLootDrops {
-    margin-bottom: 10px;
-}
+#gameWrapper .tooltip { display: none; padding: 2px 5px; position: absolute; background-color: #171813; border: 1px solid black; box-shadow: -1px 3px 2px #111; z-index: 999; }
+#gameWrapper .tooltip.bottom { top: 30px; }
+#gameWrapper .tooltip.right { left: 2px; }
+#gameWrapper .tooltip.left {	right: 0px; }
+#gameWrapper .tooltip.top { bottom: 20px; }
+#gameWrapper *:hover > .tooltip { display: block; }
+#gameWrapper .tooltip:hover {	display: none !important; }
+#gameWrapper .disabled:hover > .tooltip, #gameWrapper .button.free:hover > .tooltip {display : none; }
+#gameWrapper #event .button.disabled:hover > .tooltip { display: block; }
+#gameWrapper .row_key { clear : both; float: left; }
+#gameWrapper .row_val { float: right; }
+#gameWrapper .total { font-weight: bold; }
 
 
-   
 /* Events */
-
-.eventPanel {
-	border: 2px solid transparent;
-    left: 50px;
-    position: absolute;
-    top: 75px;
-    width: 92%;
-    z-index: 20;
-}
-
-.eventPanel:after {
-    background-color: #20211c;
-    position: absolute;
-    top: -1px;
-    left: -2px;
-    width: 100%;
-    height: 100%;
-    content: " ";
-    border: 2px solid #5d5555;
-    z-index: -2;
-}
-
-.eventPanel .button {
-	float:left;
-	margin-right: 20px;
-}
-
-.eventTitle {
-	display: inline-block;
-    font-weight: bold;
-    position: relative;
-    border-bottom: 1px solid #635c5c;
-    width: 99%;
-    margin: 0px 5px;
-    padding: 5px 8px;
-}
-
-.eventTitle:after {
-	bottom: 32%;
-    content: " ";
-    height: 5px;
-    left: 0;
-    position: absolute;
-    width: 100%;
-    z-index: -1;
-}
-
-#eventDescription {
-	position: relative;
-    min-height: 70px;
-    padding: 10px 10px 10px 6px;
-}
-
-#eventDescription textarea {
-	width: 100%;
-	height: 150px;
-    color: #000;
-}
-
-#eventDescription > div {
-    padding: 5px;
-}
-
-.take-all-button {
-	float: none;
-}
-
-#eventButtons { 
-    position: relative;
-    bottom: 5px;
-}
-
-#eventButtons > .button {
-	margin: -5px 10px 18px;
-	margin-right: 15px;
-}
+#gameWrapper .eventPanel { border: 2px solid transparent; left: 50px; position: absolute; top: 75px; width: 92%; z-index: 20; }
+#gameWrapper .eventPanel:after { background-color: #20211c; position: absolute; top: -1px; left: -2px; width: 100%; height: 100%; content: " "; border: 2px solid #5d5555; z-index: -2; }
+#gameWrapper .eventPanel .button { float:left; margin-right: 20px; }
+#gameWrapper .eventTitle { display: inline-block; font-weight: bold; position: relative; border-bottom: 1px solid #635c5c; width: 99%; margin: 0px 5px; padding: 5px 8px; }
+#gameWrapper .eventTitle:after {	bottom: 32%; content: " "; height: 5px; left: 0; position: absolute; width: 100%; z-index: -1; }
+#gameWrapper #eventDescription {	position: relative; min-height: 70px; padding: 10px 10px 10px 6px; }
+#gameWrapper #eventDescription textarea { width: 100%; height: 150px; color: #000; }
+#gameWrapper #eventDescription > div { padding: 5px; }
+#gameWrapper #eventButtons { position: relative; bottom: 5px; }
+#gameWrapper #eventButtons > .button { margin: -5px 10px 18px; margin-right: 15px; }
+#gameWrapper #eventLootDrops { margin-bottom: 10px; }
 
 /* Combat! */
-.eventPanel #combatPanel {
-    position: relative;
-    padding: 7px 0px 25px 0px;
-    margin-bottom: 25px;
-    min-height: 100px;
-    background-color: #272727;
-    border: 1px solid #50504e;
-}
-
-.eventPanel .fighterStats .fighterStatsName {
-    font-size: 16px;
-    font-weight: bold;
-}
-
-.eventPanel #gamePlayerStats {
-    position: absolute;
-    left: 5px;
-    border: solid 2px #464645;
-    padding: 10px;
-    width: 20%;
-}
-
-.eventPanel #gameEnemyStats {
-    position: absolute;
-    right: 5px;
-    border: solid 2px #464645;
-    padding: 10px;
-    width: 20%;
-}
-
-#eventDescription div.fighter {
-	position: absolute;
-    padding: 5px;
-    text-align: center;
-}
-
-#gamePlayer {
-	left: 25%;
-}
-
-#gameEnemy {
-	right: 25%;
-}
-
-#fightersPanel .bullet {
-	padding: 0px 20px 0px 20px;
-	bottom: 50px;
-	position: absolute;
-	height: 1px;
-	line-height: 1px;
-}
-
-.damageText {
-	position: absolute;
-	bottom: 30px;
-	left: 50%;
-	margin-left: -50%;
-}
-
-#lootButtons {
-	padding-bottom: 0px !important;
-	margin: 25px 0px 10px 5px;
-	position: relative;
-    bottom: 5px;
-}
-
-#lootButtons:before {
-	content: "loot:";
-	position: absolute;
-	top: -18px;
-	left: 0px;
-}
-
-#lootButtons .takeETrow {
-    margin-top: 10px;
-}
-
-#dropMenu {
-	background: none repeat scroll 0 0 white;
-	border: 1px solid black;
-	position: absolute;
-	z-index: 100;
-	padding-top: 5px;
-	text-align: left;
-	box-shadow: -1px 3px 2px #666;
-	cursor: default;
-}
-
-#dropMenu:before {
-	content: "drop:";
-	border-bottom: 1px solid black;
-	display: block;
-	margin-bottom: 5px;
-	padding: 0px 0px 5px 5px;
-}
-
-#dropMenu > div {
-	padding: 0px 5px 5px 5px;
-	cursor: pointer;
-}
-
-#dropMenu > div:hover {
-	text-decoration: underline;
-}
+#gameWrapper .eventPanel #combatPanel { position: relative; padding: 7px 0px 25px 0px; margin-bottom: 25px; min-height: 100px; background-color: #272727; border: 1px solid #50504e; }
+#gameWrapper .eventPanel .fighterStats .fighterStatsName { font-size: 16px; font-weight: bold; }
+#gameWrapper .eventPanel #gamePlayerStats { position: absolute; left: 5px; border: solid 2px #464645; padding: 10px; width: 20%; }
+#gameWrapper .eventPanel #gameEnemyStats { position: absolute; right: 5px; border: solid 2px #464645; padding: 10px; width: 20%; }
+#gameWrapper #eventDescription .fighter {	position: absolute; padding: 5px; text-align: center; }
+#gameWrapper #gamePlayer {left : 25%; }
+#gameWrapper #gameEnemy { right: 25%; }
+#gameWrapper #fightersPanel .bullet { padding: 0px 20px 0px 20px; bottom: 50px; position: absolute; height: 1px; line-height: 1px; }
+#gameWrapper .damageText { position: absolute; bottom: 30px; left: 50%;margin-left: -50%; }
+#gameWrapper #lootButtons { padding-bottom: 0px !important;	margin: 25px 0px 10px 5px; position: relative; bottom: 5px; }
+#gameWrapper #lootButtons:before { content: "loot:";	position: absolute;	top: -18px;	left: 0px; }
 
 
 

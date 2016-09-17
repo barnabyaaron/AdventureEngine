@@ -17,8 +17,7 @@ var StateManager = {
 
         // state categories
         var cats = [
-            'features',     // big features
-            'stores',       // item stores
+            'features',     // big features   
             'inventory',    // player inventory
             'player',       // player stats
             'timers',       // timer states
@@ -241,8 +240,12 @@ var StateManager = {
 
     //PERKS
     addPerk: function (name) {
-        $SM.set('player.perks["' + name + '"]', true);
-        Notifications.notify(null, Engine.Perks[name].notify);
+        if (Story.activeStory != undefined && Story.activeStory != null) {
+            if (Story.activeStory.Perks[name] != undefined) {
+                $SM.set('player.perks["' + name + '"]', true);
+                Notifications.notify(null, Story.activeStory.Perks[name].notify);
+            }
+        }
     },
 
     hasPerk: function (name) {

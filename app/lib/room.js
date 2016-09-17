@@ -9,11 +9,7 @@
             this.options,
             options
         );
-
-        // Load Rooms
-        Room.ROOMS = $SM.get('rooms');
-        if (Room.ROOMS == undefined) Room.ROOMS = [];
-
+        
         //subscribe to stateUpdates
         $.Dispatch('stateUpdate').subscribe(Room.handleStateUpdates);
     },
@@ -32,7 +28,7 @@
 
         if (typeof options.commands == 'Array') {
             item.commands = options.commands;
-        }
+        } else { item.commands = []; }
 
         if (typeof options.loot == 'Array') {
             item.loot = options.loot;

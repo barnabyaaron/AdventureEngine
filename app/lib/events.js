@@ -21,7 +21,7 @@ var Events = {
             Events.Global,
             Events.Story
         );
-
+        
         Events.eventStack = [];
 
         Events.scheduleNextEvent();
@@ -37,6 +37,13 @@ var Events = {
 
     delayState: 'wait',
     activeScene: null,
+
+    updateEventPool: function () {
+        Events.EventPool = [].concat(
+            Events.Global,
+            Events.Story
+        );
+    },
 
     activeEvent: function () {
         if (Events.eventStack && Events.eventStack.length > 0) {
@@ -685,7 +692,8 @@ var Events = {
             var possibleEvents = [];
             for (var i in Events.EventPool) {
                 var event = Events.EventPool[i];
-                if (event.isAvailable()) {
+
+                if (event != undefined && event.isAvailable()) {
                     possibleEvents.push(event);
                 }
             }
@@ -719,7 +727,6 @@ var Events = {
         if (event) {
             Engine.event('game event', 'event');
             Engine.keyLock = true;
-            Engine.tabNavigation = false;
             Button.saveCooldown = false;
             Events.eventStack.unshift(event);
             event.eventPanel = $('<div>').attr('id', 'event').addClass('eventPanel').css('opacity', '0');
@@ -732,7 +739,7 @@ var Events = {
             Events.loadScene('start');
             $('div#gameWrapper').append(Events.eventPanel());
             Events.eventPanel().animate({ opacity: 1 }, Events._PANEL_FADE, 'linear');
-            var currentSceneInformation = Events.activeEvent().scenes[Events.activeScene];
+            var currentSceneInformation = Events.activeEvent().scenes[Events.activeScene];   
         }
     },
 
@@ -750,7 +757,6 @@ var Events = {
             Events.eventStack.shift();
             Engine.log(Events.eventStack.length + ' events remaining');
             Engine.keyLock = false;
-            Engine.tabNavigation = true;
             Button.saveCooldown = true;
 
             // Force refocus on the body. I hate you, IE.

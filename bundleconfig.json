@@ -18,7 +18,9 @@
       "app/lib/room.js",
       "app/lib/state_manager.js",
       "app/lib/story.js",
-      "app/stories/lostIsland/events/encounters.js",
+      "app/stories/events/encounters.js",
+      "app/stories/events/global.js",
+      "app/stories/events/story.js",
       "app/stories/lostIsland/lostIsland.js"
     ]
   }
