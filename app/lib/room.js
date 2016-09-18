@@ -15,23 +15,33 @@
     },
 
     updateRoomsState: function() {
-        $SM.set('rooms', Room.ROOMS); // Update State
+        $SM.setM('rooms', Room.ROOMS); // Update State
+    },
+
+    getRoom: function (id) {
+        return Room.ROOMS[id];
     },
 
     createRoom: function(id, options) {
-        var item = {};
+        var r = {};
 
-        item.id = id;
-        item.name = options.name;
-        item.description = options.description;
-        item.visited = false;
+        r.id = id;
+        r.name = options.name;
+        r.description = options.description;
+        r.visited = false;
 
+        r.canEnter = (options.canEnter != undefined) ? options.canEnter : true;
+        r.canEnterFunc = (typeof options.canEnterFunc == 'function') ? options.canEnterFunc : function () {
+            /* Default Can Enter Function */
+        };
+        r.lockedDesc = (options.lockedDesc != undefined) ? options.lockedDesc : "You cannot go that way.";
+        
         if (typeof options.commands == 'Array') {
-            item.commands = options.commands;
-        } else { item.commands = []; }
+            r.commands = options.commands;
+        } else { r.commands = []; }
 
         if (typeof options.loot == 'Array') {
-            item.loot = options.loot;
+            r.loot = options.loot;
             /*
             [
                 'item id' = {
@@ -41,22 +51,22 @@
                 }
             ]
             */
-        } else { item.loot = []; }
+        } else { r.loot = []; }
 
         if (typeof options.Events == 'Array') {
-            item.Events = options.Events;
-        } else { item.Events = []; }
+            r.Events = options.Events;
+        } else { r.Events = []; }
 
         if (typeof options.onEnter == 'function') {
-            item.onEnter = options.onEnter;
+            r.onEnter = options.onEnter;
         }
 
         if (typeof options.onExit == 'function') {
-            item.onExit = options.onExit;
+            r.onExit = options.onExit;
         }
 
         if (typeof options.exits == 'Array') {
-            item.exits = options.exits;
+            r.exits = options.exits;
             /*
             [
                 'north' =  {
@@ -67,12 +77,29 @@
                 ...
             ]
             */
-        } else { item.exits = []; }
+        } else { r.exits = []; }
 
-        Room.ROOMS[id] = item;
+        // Core functions
+        r.triggerEnter = function () {
+            return Room.triggerEnter(this);
+        };
+
+        r.triggerExit = function () {
+            return Room.triggerExit(this);
+        };
+
+        r.addExit = function (direction, options) {
+            return Room.addExit(this, direction, options);
+        };
+
+        r.triggerLook = function () {
+            return Room.triggerLook(this);
+        };
+
+        Room.ROOMS[id] = r;
         Room.updateRoomsState();
 
-        return item;
+        return r;
     },
 
     updateRoom: function(room, options) {
@@ -98,10 +125,34 @@
         Room.updateRoomsState();
     },
 
+    triggerEnter: function(room) {
+        Notifications.notify("<strong>" + room.name + "</strong>");
+
+        if (!room.visited) {
+            Room.visitRoom(room);
+
+            Room.triggerLook(room);
+        }
+
+        if (room.onEnter) {
+            room.onEnter();
+        }
+    },
+
+    triggerExit: function(room) {
+        if (room.onExit) {
+            room.onExit();
+        }
+    },
+
+    triggerLook: function(room) {
+        Notifications.notify(room.description);
+    },
+
     removeLootFromRoom: function (room, loot) {
         var i;
         for (i in room.loot) {
-            if (room.loot[i].toString() == x.toString()) {
+            if (room.loot[i].id == loot.id) {
                 room.loot.splice(i, 1);
             }
         }

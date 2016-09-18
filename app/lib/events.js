@@ -137,14 +137,14 @@ var Events = {
         var numWeapons = 0;
         for (var k in Items.Weapons) {
             var weapon = Items.Weapons[k];
-            if (typeof Player.inventory[k] == 'number' && Player.inventory[k] > 0) {
+            if (typeof Player.inventory[k] == 'object' && Player.inventory[k].qty > 0) {
                 if (typeof weapon.damage != 'number' || weapon.damage === 0) {
                     // Weapons that deal no damage don't count
                     numWeapons--;
                 } else if (weapon.cost) {
                     for (var c in weapon.cost) {
                         var num = weapon.cost[c];
-                        if (typeof Player.inventory[c] != 'number' || Player.inventory[c] < num) {
+                        if (typeof Player.inventory[c] != 'object' || Player.inventory[c].qty < num) {
                             // Can't use this weapon, so don't count it
                             numWeapons--;
                         }
@@ -159,7 +159,7 @@ var Events = {
             Events.createAttackButton('fists').prependTo(btns);
         }
 
-        if ((Player.inventory['medicine'] || 0) !== 0) {
+        if (typeof Player.inventory['medicine'] == 'object' && Player.inventory['medicine'].qty > 0) {
             Events.createUseMedsButton().appendTo(btns);
         }
 
@@ -180,7 +180,7 @@ var Events = {
             cost: { 'medicine': 1 }
         });
 
-        if ((Player.inventory['medicine'] || 0) === 0) {
+        if (typeof Player.inventory['medicine'] != 'object' || Player.inventory['medicine'].qty === 0) {
             Button.setDisabled(btn, true);
         }
 
@@ -207,7 +207,7 @@ var Events = {
         }
 
         for (var k in weapon.cost) {
-            if (typeof Player.inventory[k].qty != 'number' || Player.inventory[k].qty < weapon.cost[k]) {
+            if (typeof Player.inventory[k] != 'object' || typeof Player.inventory[k].qty != 'number' || Player.inventory[k].qty < weapon.cost[k]) {
                 Button.setDisabled(btn, true);
                 break;
             }
@@ -231,7 +231,7 @@ var Events = {
     useMeds: function () {
         if (Player.inventory['medicine'] != undefined && Player.inventory['medicine'].qty > 0) {
             Player.inventory['medicine'].qty--;
-            Player.updateSupplies();
+            Player.updateInventory();
             if (Player.inventory['medicine'].qty === 0) {
                 Button.setDisabled($('#meds'), true);
             }
@@ -484,7 +484,7 @@ var Events = {
                         });
                         Button.cooldown(leaveBtn.appendTo(btns));
 
-                        if ((Player.inventory['medicine'] || 0) !== 0) {
+                        if (typeof Player.inventory['medicine'] == 'object' && Player.inventory['medicine'].qty > 0) {
                             Events.createUseMedsButton(0).appendTo(btns);
                         }
                     }
@@ -644,7 +644,7 @@ var Events = {
             for (var k in costMod) {
                 Player.inventory[k] += costMod[k];
             }
-            Player.updateSupplies();
+            Player.updateInventory();
         }
 
         if (typeof info.onChoose == 'function') {
@@ -721,6 +721,24 @@ var Events = {
 
         var r = Math.floor(Math.random() * (possibleFights.length));
         Events.startEvent(possibleFights[r]);
+    },
+
+    triggerRoomEvent: function(events) {
+        if (Events.activeEvent() == null) {
+            var possibleEvents = [];
+            for (var e in events) {
+                if (e.isAvailable()) {
+                    possibleEvents.push(e);
+                }
+            }
+
+            if (possibleEvents.length === 0) {
+                return;
+            } else {
+                var r = Math.floor(Math.random() * (possibleEvents.length));
+                Events.startEvent(possibleEvents[r]);
+            }
+        }
     },
     
     startEvent: function (event, options) {

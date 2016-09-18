@@ -33,6 +33,14 @@
         //},
     },
 
+    Food: {
+        'meat': {
+            name: 'Meat',
+            type: 'food',
+            heal: 2
+        },
+    },
+
     Craftables: {
         'torch': {
             name: 'torch',
@@ -74,6 +82,12 @@
     },
 
     MiscItems: {
+        'compass': {
+            name: 'Compass',
+            type: 'misc',
+            desc: 'A golden compass',
+            roomDesc: 'You notice a golden <b>compass</b> lying on the floor.'
+        }
         // Example
         //'tv remote': {
         //    name: 'TV Remote',
@@ -92,6 +106,7 @@
         Items.ItemPool = [];
         Items.ItemPool['weapon'] = Items.Weapons;
         Items.ItemPool['craftable'] = Items.Craftables;
+        Items.ItemPool['food'] = Items.Food;
         Items.ItemPool['ammo'] = Items.Ammo;
         Items.ItemPool['misc'] = Items.MiscItems;
 
@@ -104,6 +119,20 @@
     getItem: function (type, name) {
         var items = Items.ItemPool[type];
         return items[name];
+    },
+
+    getUnknownItem: function (name) {
+        for (var type in Items.ItemPool) {
+            var items = Items.ItemPool[type];
+
+            if ($.inArray(name, items) > -1) {
+                // Item Found
+                return items[name];
+            }
+        }
+
+        // Item not found
+        return null;
     },
 
     addItem: function (type, name, options) {
@@ -137,7 +166,7 @@
     },
 
     buildItem: function (name) {
-        // @TODO Work In Progress   (Need to convert current inventory state into a array)
+        // @TODO needs testing
 
         var craftable = Items.Craftables[name];
 
@@ -148,7 +177,7 @@
                 case 'weapons':
                 case 'tool':
                 case 'upgrade':
-                    numThings = $SM.get('inventory["' + name + '"]', true);
+                    numThings = Player.inventory[name].qty;
                     break;
             }
 
@@ -161,7 +190,7 @@
             var cost = craftable.cost();
 
             for (var k in cost) {
-                var have = $SM.get('inventory["' + k + '"]', true);
+                var have = Player.inventory[k].qty;
                 if (have < cost[k]) {
                     Notifications.nofity("not enough " + k);
                     return false;

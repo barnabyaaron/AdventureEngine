@@ -127,6 +127,7 @@
     </None>
   </ItemGroup>
   <ItemGroup>
+    <None Include="Scripts\_references.js" />
     <Content Include="Web.config" />
   </ItemGroup>
   <ItemGroup>

@@ -22,7 +22,7 @@
         }
 
         // Check Current Room Commands
-        var curRoom = Story.activeRoom;
+        var curRoom = Room.getRoom(Story.activeRoom);
         if ((curRoom != undefined && curRoom != null) && curRoom.commands != undefined && curRoom.commands.length > 0) {
             for (var c in curRoom.command) {
                 var validCommands = curRoom.command[c][0];
@@ -44,12 +44,14 @@
                 Engine.options.log = false;
 
                 Notifications.notify("Debug Mode Deactive");
+                return;
             } else {
                 Commands.CHEAT_MODE = true;
                 Engine.options.debug = true;
                 Engine.options.log = true;
 
                 Notifications.notify("Debug Mode Active");
+                return;
             }
         }
 
@@ -84,8 +86,14 @@
             case "look":
                 return Commands.triggerLook();
 
+            case "use":
+                return command.triggerUse(command);
+
+            case "eat":
+                return command.triggerEat(command);
+
             default:
-                Commands.triggerInvalidCommand();
+                return Commands.triggerInvalidCommand();
         }
 
     },
@@ -96,10 +104,10 @@
                 Player.setHp(Player.getMaxHealth());
                 return true;
             case "trigger fight":
-                Event.triggerFight();
+                Events.triggerFight();
                 return true;
             case "trigger event":
-                Event.triggerEvent();
+                Events.triggerEvent();
                 return true;
             case "give item":
                 Notifications.notify("What Item do you want ?");
@@ -118,6 +126,24 @@
 
     triggerInvalidCommand: function () {
         Notifications.notify("Invalid Command.");
+    },
+
+    triggerUse: function(command) {
+        var itemName = command.replace("use ", "");
+
+        var item = Items.getUnknownItem(itemName);
+        if (item != null) {
+            // @TODO Use item
+        }
+    },
+
+    triggerEat: function (command) {
+        var itemName = command.replace("eat ", "");
+
+        var item = Items.getUnknownItem(itemName);
+        if (item != null) {
+            Player.eatFood(item);
+        }
     },
 
     triggerGo: function(value) {

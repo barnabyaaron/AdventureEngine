@@ -16,15 +16,14 @@ var StateManager = {
         );
 
         // state categories
-        var cats = [
-            'features',     // big features   
-            'inventory',    // player inventory
-            'player',       // player stats
-            'timers',       // timer states
-            'game',         // mostly settings
-            'playStats',    // anything play related: time, loads
-            'calldown',     // values for calldown elements
-            'story',        // story progress and status
+        var cats = [ 
+            'inventory',  
+            'player',     
+            'timers',     
+            'game',       
+            'playStats',  
+            'calldown',  
+            'story',     
             'rooms'
         ];
 
@@ -66,14 +65,14 @@ var StateManager = {
         if (typeof value == 'number' && value > $SM.MAX_STORE) value = $SM.MAX_STORE;
 
         try {
-            eval('(' + fullPath + ') = value');
+            eval('(' + fullPath + ') = value');          
         } catch (e) {
             //parent doesn't exist, so make parent
             $SM.createState(stateName, value);
         }
 
         //stores values can not be negative
-        if (stateName.indexOf('stores') === 0 && $SM.get(stateName, true) < 0) {
+        if (stateName.indexOf('inventory') === 0 && $SM.get(stateName, true) < 0) {
             eval('(' + fullPath + ') = 0');
             Engine.log('WARNING: state:' + stateName + ' can not be a negative value. Set to 0 instead.');
         }
@@ -115,8 +114,19 @@ var StateManager = {
             old = 0;
             $SM.set(stateName, old + value, noEvent);
         } else if (typeof old != 'number' || typeof value != 'number') {
-            Engine.log('WARNING: Can not do math with state:' + stateName + ' or value:' + value + ' because at least one is not a number.');
-            err = 1;
+            if (typeof old.qty == 'number') {
+                if (typeof value == 'number') {
+                    $SM.set(stateName, old.qty + value, noEvent);
+                } else if (typeof value.qty == 'number') {
+                    $SM.set(stateName, old.qty + value.qty, noEvent);
+                } else {
+                    Engine.log('WARNING: Can not do math with state:' + stateName + ' or value:' + value + ' because at least one is not a number.');
+                    err = 1;
+                }
+            } else {
+                Engine.log('WARNING: Can not do math with state:' + stateName + ' or value:' + value + ' because at least one is not a number.');
+                err = 1;
+            }
         } else {
             $SM.set(stateName, old + value, noEvent); //setState handles event and save
         }

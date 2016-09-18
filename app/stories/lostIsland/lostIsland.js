@@ -33,29 +33,113 @@
 
     init: function () {
         Story.LostIsland.createRooms();
+        Story.LostIsland.createItems();
+        Story.LostIsland.createEvents();
+        Story.LostIsland.createExits();
 
-        Story.LostIsland.startStory();
+        Story.LostIsland.setDefaultRoom();
+
+        Story.LostIsland.loadStory();
     },
 
-    startStory: function () {
-        Story.setRoom(Story.LostIsland.DEFAULT_ROOM);
+    loadStory: function () {
+        var room = $SM.get('story.room');
+        if (room == undefined) room = Story.LostIsland.DEFAULT_ROOM;
+
+        Story.setRoom(room);
+    },
+
+    setDefaultRoom: function () {
+        Story.LostIsland.DEFAULT_ROOM = Room.getRoom('beach'); // Set Default Room
     },
 
     createRooms: function () {
         // Beach
-        var beach = Room.createRoom('beach', {
+        Room.createRoom('beach', {
             name: 'Beach',
-            description: 'A Beach with white sand all around and ocean as far as you can see.'
+            description: 'You wake up Lying face first on a sandy beach, while you spit out all the sand in your mouth you look around.[[break]]To your <b>south</b> all you can see is ocean as far as the eye can see, however to the <b>north</b> you can see a huge forest.',
+            loot: [
+                { type: 'misc', id: 'compass' }
+            ],
+            commands: [
+                [
+                    ['look south', 'look at ocean'],
+                    function () {
+                        Notifications.notify("You look at the ocean, it seems to go as far as you can see.");
+                    }
+                ],
+                [
+                    ['eat sand'],
+                    function () {
+                        Notifications.notify("Why?");
+                    }
+                ],
+                [
+                    ['take compass', 'pickup compass', 'pick up compass'],
+                    function () {
+                        Player.pickupItem('compass', 'beach');
+                        $SM.set('game.compass', 1);
+                        Notifications.notify("You pickup the compass from the floor, this should help you find your way around.");
+                    }
+                ]
+            ],
+            Events: [
+                {
+                    title: 'Combat - Large Crab',
+                    isAvailable: function () {
+                        return Story.playerMoves >= 1
+                    },
+                    scenes: {
+                        'start': {
+                            combat: true,
+                            enemy: 'large crab',
+                            enemyName: 'Large Crab',
+                            deathMessage: 'You killed the large crab',
+                            damage: 2,
+                            hit: 0.4,
+                            attackDelay: 3,
+                            health: 3,
+                            loot: {
+                                'meat': {
+                                    itemObj: Items.getItem('food', 'meat'),
+                                    min: 1,
+                                    max: 3,
+                                    chance: 1
+                                }
+                            },
+                            notification: 'A Crab the size of a person scurries across the beach towards you.'
+                        }
+                    }
+                }
+            ],
+            onEnter: function () {
+                if (Math.random() <= 0.2) { // 20% Chance
+                    Events.triggerRoomEvent(Room.getRoom('beach').Events);
+                }
+            }
         });
-        Story.LostIsland.DEFAULT_ROOM = beach; // Set Default Room
 
-        var forest = Room.createRoom('forest', {
+        Room.createRoom('forest-1', {
             name: 'Forest',
             description: 'A Forest'
         });
+    },
 
-        Room.addExit(beach, 'north', {
-            room: forest
+    createItems: function () {
+        // @TODO
+    },
+
+    createEvents: function () {
+        // @TODO
+    },
+
+    createExits: function () {
+        Room.addExit(Room.getRoom('beach'), 'north', {
+            room: Room.getRoom('forest-1')
+        });
+
+        Room.addExit(Room.getRoom('forest-1'), 'south', {
+            room: Room.getRoom('beach')
         });
     }
 

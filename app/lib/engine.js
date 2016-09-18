@@ -12,6 +12,11 @@
             log: false
         },
 
+        ui: {
+            roomPanel: false,
+            playerPanel: true
+        },
+
         topics: {},        
 
         init: function (options) {
@@ -69,6 +74,8 @@
             
             Engine.GAME_STARTED = true;
             $SM.set('game.started', Engine.GAME_STARTED);
+
+            Engine.updateUI();
         },
 
         browserValid: function () {
@@ -77,6 +84,14 @@
 
         isMobile: function () {
             return (location.search.indexOf('ignorebrowser=true') < 0 && /Android|webOS|iPhone|iPad|iPod|BlackBerry/i.test(navigator.userAgent));
+        },
+
+        updateUI: function () {
+            var hasCompas = ($SM.get('game.compass', true) === 'true');
+            Engine.ui.roomPanel = hasCompas;
+
+            Player.checkUISettings();
+            Story.checkUISettings();
         },
 
         saveGame: function () {
@@ -300,7 +315,9 @@
         },
 
         handleStateUpdates: function (e) {
-
+            if (e.category == 'game' && e.stateName.indexOf('game.compass') === 0) {
+                Engine.updateUI();
+            };
         },
 
         setInterval: function (callback, interval, skipDouble) {

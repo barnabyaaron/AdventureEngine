@@ -30,7 +30,7 @@ var Notifications = {
     notify: function (text, room, noQueue) {
         if (typeof text == 'undefined') return;
 
-        if (room != null && Engine.activeRoom != room) {
+        if (room != null) {
             if (!noQueue) {
                 if (typeof this.notifyQueue[room] == 'undefined') {
                     this.notifyQueue[room] = [];
@@ -38,7 +38,11 @@ var Notifications = {
                 this.notifyQueue[room].push(text);
             }
         } else {
-            Notifications.printMessage(text);
+            var textSplit = text.split('[[break]]');
+            
+            for (var i in textSplit) {
+                Notifications.printMessage(textSplit[i]);
+            }
         }
         Engine.saveGame();
     },

@@ -148,7 +148,7 @@ var Commands = {
         }
 
         // Check Current Room Commands
-        var curRoom = Story.activeRoom;
+        var curRoom = Room.getRoom(Story.activeRoom);
         if ((curRoom != undefined && curRoom != null) && curRoom.commands != undefined && curRoom.commands.length > 0) {
             for (var c in curRoom.command) {
                 var validCommands = curRoom.command[c][0];
@@ -170,12 +170,14 @@ var Commands = {
                 Engine.options.log = false;
 
                 Notifications.notify("Debug Mode Deactive");
+                return;
             } else {
                 Commands.CHEAT_MODE = true;
                 Engine.options.debug = true;
                 Engine.options.log = true;
 
                 Notifications.notify("Debug Mode Active");
+                return;
             }
         }
 
@@ -210,8 +212,14 @@ var Commands = {
             case "look":
                 return Commands.triggerLook();
 
+            case "use":
+                return command.triggerUse(command);
+
+            case "eat":
+                return command.triggerEat(command);
+
             default:
-                Commands.triggerInvalidCommand();
+                return Commands.triggerInvalidCommand();
         }
 
     },
@@ -222,10 +230,10 @@ var Commands = {
                 Player.setHp(Player.getMaxHealth());
                 return true;
             case "trigger fight":
-                Event.triggerFight();
+                Events.triggerFight();
                 return true;
             case "trigger event":
-                Event.triggerEvent();
+                Events.triggerEvent();
                 return true;
             case "give item":
                 Notifications.notify("What Item do you want ?");
@@ -244,6 +252,24 @@ var Commands = {
 
     triggerInvalidCommand: function () {
         Notifications.notify("Invalid Command.");
+    },
+
+    triggerUse: function(command) {
+        var itemName = command.replace("use ", "");
+
+        var item = Items.getUnknownItem(itemName);
+        if (item != null) {
+            // @TODO Use item
+        }
+    },
+
+    triggerEat: function (command) {
+        var itemName = command.replace("eat ", "");
+
+        var item = Items.getUnknownItem(itemName);
+        if (item != null) {
+            Player.eatFood(item);
+        }
     },
 
     triggerGo: function(value) {
@@ -278,6 +304,11 @@ var Commands = {
             state: null,
             debug: false,
             log: false
+        },
+
+        ui: {
+            roomPanel: false,
+            playerPanel: true
         },
 
         topics: {},        
@@ -337,6 +368,8 @@ var Commands = {
             
             Engine.GAME_STARTED = true;
             $SM.set('game.started', Engine.GAME_STARTED);
+
+            Engine.updateUI();
         },
 
         browserValid: function () {
@@ -345,6 +378,14 @@ var Commands = {
 
         isMobile: function () {
             return (location.search.indexOf('ignorebrowser=true') < 0 && /Android|webOS|iPhone|iPad|iPod|BlackBerry/i.test(navigator.userAgent));
+        },
+
+        updateUI: function () {
+            var hasCompas = ($SM.get('game.compass', true) === 'true');
+            Engine.ui.roomPanel = hasCompas;
+
+            Player.checkUISettings();
+            Story.checkUISettings();
         },
 
         saveGame: function () {
@@ -568,7 +609,9 @@ var Commands = {
         },
 
         handleStateUpdates: function (e) {
-
+            if (e.category == 'game' && e.stateName.indexOf('game.compass') === 0) {
+                Engine.updateUI();
+            };
         },
 
         setInterval: function (callback, interval, skipDouble) {
@@ -770,14 +813,14 @@ var Events = {
         var numWeapons = 0;
         for (var k in Items.Weapons) {
             var weapon = Items.Weapons[k];
-            if (typeof Player.inventory[k] == 'number' && Player.inventory[k] > 0) {
+            if (typeof Player.inventory[k] == 'object' && Player.inventory[k].qty > 0) {
                 if (typeof weapon.damage != 'number' || weapon.damage === 0) {
                     // Weapons that deal no damage don't count
                     numWeapons--;
                 } else if (weapon.cost) {
                     for (var c in weapon.cost) {
                         var num = weapon.cost[c];
-                        if (typeof Player.inventory[c] != 'number' || Player.inventory[c] < num) {
+                        if (typeof Player.inventory[c] != 'object' || Player.inventory[c].qty < num) {
                             // Can't use this weapon, so don't count it
                             numWeapons--;
                         }
@@ -792,7 +835,7 @@ var Events = {
             Events.createAttackButton('fists').prependTo(btns);
         }
 
-        if ((Player.inventory['medicine'] || 0) !== 0) {
+        if (typeof Player.inventory['medicine'] == 'object' && Player.inventory['medicine'].qty > 0) {
             Events.createUseMedsButton().appendTo(btns);
         }
 
@@ -813,7 +856,7 @@ var Events = {
             cost: { 'medicine': 1 }
         });
 
-        if ((Player.inventory['medicine'] || 0) === 0) {
+        if (typeof Player.inventory['medicine'] != 'object' || Player.inventory['medicine'].qty === 0) {
             Button.setDisabled(btn, true);
         }
 
@@ -840,7 +883,7 @@ var Events = {
         }
 
         for (var k in weapon.cost) {
-            if (typeof Player.inventory[k].qty != 'number' || Player.inventory[k].qty < weapon.cost[k]) {
+            if (typeof Player.inventory[k] != 'object' || typeof Player.inventory[k].qty != 'number' || Player.inventory[k].qty < weapon.cost[k]) {
                 Button.setDisabled(btn, true);
                 break;
             }
@@ -864,7 +907,7 @@ var Events = {
     useMeds: function () {
         if (Player.inventory['medicine'] != undefined && Player.inventory['medicine'].qty > 0) {
             Player.inventory['medicine'].qty--;
-            Player.updateSupplies();
+            Player.updateInventory();
             if (Player.inventory['medicine'].qty === 0) {
                 Button.setDisabled($('#meds'), true);
             }
@@ -1117,7 +1160,7 @@ var Events = {
                         });
                         Button.cooldown(leaveBtn.appendTo(btns));
 
-                        if ((Player.inventory['medicine'] || 0) !== 0) {
+                        if (typeof Player.inventory['medicine'] == 'object' && Player.inventory['medicine'].qty > 0) {
                             Events.createUseMedsButton(0).appendTo(btns);
                         }
                     }
@@ -1277,7 +1320,7 @@ var Events = {
             for (var k in costMod) {
                 Player.inventory[k] += costMod[k];
             }
-            Player.updateSupplies();
+            Player.updateInventory();
         }
 
         if (typeof info.onChoose == 'function') {
@@ -1354,6 +1397,24 @@ var Events = {
 
         var r = Math.floor(Math.random() * (possibleFights.length));
         Events.startEvent(possibleFights[r]);
+    },
+
+    triggerRoomEvent: function(events) {
+        if (Events.activeEvent() == null) {
+            var possibleEvents = [];
+            for (var e in events) {
+                if (e.isAvailable()) {
+                    possibleEvents.push(e);
+                }
+            }
+
+            if (possibleEvents.length === 0) {
+                return;
+            } else {
+                var r = Math.floor(Math.random() * (possibleEvents.length));
+                Events.startEvent(possibleEvents[r]);
+            }
+        }
     },
     
     startEvent: function (event, options) {
@@ -1484,6 +1545,14 @@ var Items = {
         //},
     },
 
+    Food: {
+        'meat': {
+            name: 'Meat',
+            type: 'food',
+            heal: 2
+        },
+    },
+
     Craftables: {
         'torch': {
             name: 'torch',
@@ -1525,6 +1594,12 @@ var Items = {
     },
 
     MiscItems: {
+        'compass': {
+            name: 'Compass',
+            type: 'misc',
+            desc: 'A golden compass',
+            roomDesc: 'You notice a golden <b>compass</b> lying on the floor.'
+        }
         // Example
         //'tv remote': {
         //    name: 'TV Remote',
@@ -1543,6 +1618,7 @@ var Items = {
         Items.ItemPool = [];
         Items.ItemPool['weapon'] = Items.Weapons;
         Items.ItemPool['craftable'] = Items.Craftables;
+        Items.ItemPool['food'] = Items.Food;
         Items.ItemPool['ammo'] = Items.Ammo;
         Items.ItemPool['misc'] = Items.MiscItems;
 
@@ -1555,6 +1631,20 @@ var Items = {
     getItem: function (type, name) {
         var items = Items.ItemPool[type];
         return items[name];
+    },
+
+    getUnknownItem: function (name) {
+        for (var type in Items.ItemPool) {
+            var items = Items.ItemPool[type];
+
+            if ($.inArray(name, items) > -1) {
+                // Item Found
+                return items[name];
+            }
+        }
+
+        // Item not found
+        return null;
     },
 
     addItem: function (type, name, options) {
@@ -1588,7 +1678,7 @@ var Items = {
     },
 
     buildItem: function (name) {
-        // @TODO Work In Progress   (Need to convert current inventory state into a array)
+        // @TODO needs testing
 
         var craftable = Items.Craftables[name];
 
@@ -1599,7 +1689,7 @@ var Items = {
                 case 'weapons':
                 case 'tool':
                 case 'upgrade':
-                    numThings = $SM.get('inventory["' + name + '"]', true);
+                    numThings = Player.inventory[name].qty;
                     break;
             }
 
@@ -1612,7 +1702,7 @@ var Items = {
             var cost = craftable.cost();
 
             for (var k in cost) {
-                var have = $SM.get('inventory["' + k + '"]', true);
+                var have = Player.inventory[k].qty;
                 if (have < cost[k]) {
                     Notifications.nofity("not enough " + k);
                     return false;
@@ -1671,7 +1761,7 @@ var Notifications = {
     notify: function (text, room, noQueue) {
         if (typeof text == 'undefined') return;
 
-        if (room != null && Engine.activeRoom != room) {
+        if (room != null) {
             if (!noQueue) {
                 if (typeof this.notifyQueue[room] == 'undefined') {
                     this.notifyQueue[room] = [];
@@ -1679,7 +1769,11 @@ var Notifications = {
                 this.notifyQueue[room].push(text);
             }
         } else {
-            Notifications.printMessage(text);
+            var textSplit = text.split('[[break]]');
+            
+            for (var i in textSplit) {
+                Notifications.printMessage(textSplit[i]);
+            }
         }
         Engine.saveGame();
     },
@@ -1729,13 +1823,21 @@ var Player = {
 
         // Inventory
         Player.inventory = $SM.get('inventory');
-        if (Player.inventory == undefined) Player.inventory = {};
+        if (Player.inventory == undefined) Player.inventory = [];
 
         var playerPanel = $('<div>').attr('id', 'gamePlayerStatsPanel').appendTo('#gameMain');
         Player.updatePlayerPanel();
         
         //subscribe to stateUpdates
         $.Dispatch('stateUpdate').subscribe(Player.handleStateUpdates);
+    },
+
+    checkUISettings: function () {
+        if (!Engine.ui.roomPanel) {
+            $('#gamePlayerStatsPanel').css({ 'top': '0px' });
+        } else {
+            $('#gamePlayerStatsPanel').css({ 'top': 'calc(20% + 25px)' });
+        }
     },
 
     updatePlayerPanel: function () {
@@ -1812,7 +1914,12 @@ var Player = {
     },
 
     updateInventory: function() {
-        $SM.set('inventory', Player.inventory);
+        $SM.setM('inventory', Player.inventory);
+        Player.updatePlayerPanel();
+    },
+
+    reloadInventory: function () {
+        Player.inventory = $SM.get('inventory');
         Player.updatePlayerPanel();
     },
 
@@ -1829,6 +1936,56 @@ var Player = {
 
     medsHeal: function () {
         return World.MEDS_HEAL;
+    },
+
+    eatFood: function(item) {
+        if (item != undefined && item != null && typeof item == 'object' && item.type == 'food') {
+            if (Player.inventory[item.id] != undefined && Player.inventory[item.id].qty > 0) {
+                var have = Player.inventory[item.id].qty;
+
+                $SM.set('inventory["' + item.id + '"]', (have - 1));
+
+                // Heal
+                var heal = (item.heal != undefined) ? item.heal : 1;
+                Player.setHp((Player.health + heal));
+
+                Notifications.notify("You eat " + item.name);
+            } else {
+                Notifications.notify("You have no " + item.name + " to eat");
+            }
+        } else {
+            Notifications.notify("You cannot eat that");
+        }
+    },
+
+    pickupItem: function (item, room) {
+        if (typeof item != 'object') {
+            item = Items.getUnknownItem(item);
+        }
+
+        if (room != undefined) {
+            // Remove Item from room
+            if (typeof room != 'object') {
+                room = Room.getRoom(room);
+            }
+
+            Room.removeLootFromRoom(room, item);
+        }
+        
+        // Give Item to player
+        if (Player.inventory[item.id] != undefined) {
+            // Update Item
+            var curNum = Player.inventory[item.id].qty;
+            curNum = typeof curNum == 'number' ? curNum : 0;
+            var newNum = curNum + qty;
+
+            Player.inventory[item.id].qty = newNum;
+        } else {
+            // Add Item
+            Player.inventory[item.id] = item;
+            Player.inventory[item.id].qty = qty;
+        }
+        Player.updateInventory();
     },
 
     die: function () {
@@ -1866,6 +2023,9 @@ var Player = {
         if (e.category == 'player' && e.stateName.indexOf('player.health') === 0) {
             Player.updatePlayerStats();
         }
+        if (e.category == 'inventory') {
+            Player.reloadInventory();
+        }
     }
 };
 var Room = {
@@ -1885,23 +2045,33 @@ var Room = {
     },
 
     updateRoomsState: function() {
-        $SM.set('rooms', Room.ROOMS); // Update State
+        $SM.setM('rooms', Room.ROOMS); // Update State
+    },
+
+    getRoom: function (id) {
+        return Room.ROOMS[id];
     },
 
     createRoom: function(id, options) {
-        var item = {};
+        var r = {};
 
-        item.id = id;
-        item.name = options.name;
-        item.description = options.description;
-        item.visited = false;
+        r.id = id;
+        r.name = options.name;
+        r.description = options.description;
+        r.visited = false;
 
+        r.canEnter = (options.canEnter != undefined) ? options.canEnter : true;
+        r.canEnterFunc = (typeof options.canEnterFunc == 'function') ? options.canEnterFunc : function () {
+            /* Default Can Enter Function */
+        };
+        r.lockedDesc = (options.lockedDesc != undefined) ? options.lockedDesc : "You cannot go that way.";
+        
         if (typeof options.commands == 'Array') {
-            item.commands = options.commands;
-        } else { item.commands = []; }
+            r.commands = options.commands;
+        } else { r.commands = []; }
 
         if (typeof options.loot == 'Array') {
-            item.loot = options.loot;
+            r.loot = options.loot;
             /*
             [
                 'item id' = {
@@ -1911,22 +2081,22 @@ var Room = {
                 }
             ]
             */
-        } else { item.loot = []; }
+        } else { r.loot = []; }
 
         if (typeof options.Events == 'Array') {
-            item.Events = options.Events;
-        } else { item.Events = []; }
+            r.Events = options.Events;
+        } else { r.Events = []; }
 
         if (typeof options.onEnter == 'function') {
-            item.onEnter = options.onEnter;
+            r.onEnter = options.onEnter;
         }
 
         if (typeof options.onExit == 'function') {
-            item.onExit = options.onExit;
+            r.onExit = options.onExit;
         }
 
         if (typeof options.exits == 'Array') {
-            item.exits = options.exits;
+            r.exits = options.exits;
             /*
             [
                 'north' =  {
@@ -1937,12 +2107,29 @@ var Room = {
                 ...
             ]
             */
-        } else { item.exits = []; }
+        } else { r.exits = []; }
 
-        Room.ROOMS[id] = item;
+        // Core functions
+        r.triggerEnter = function () {
+            return Room.triggerEnter(this);
+        };
+
+        r.triggerExit = function () {
+            return Room.triggerExit(this);
+        };
+
+        r.addExit = function (direction, options) {
+            return Room.addExit(this, direction, options);
+        };
+
+        r.triggerLook = function () {
+            return Room.triggerLook(this);
+        };
+
+        Room.ROOMS[id] = r;
         Room.updateRoomsState();
 
-        return item;
+        return r;
     },
 
     updateRoom: function(room, options) {
@@ -1968,10 +2155,34 @@ var Room = {
         Room.updateRoomsState();
     },
 
+    triggerEnter: function(room) {
+        Notifications.notify("<strong>" + room.name + "</strong>");
+
+        if (!room.visited) {
+            Room.visitRoom(room);
+
+            Room.triggerLook(room);
+        }
+
+        if (room.onEnter) {
+            room.onEnter();
+        }
+    },
+
+    triggerExit: function(room) {
+        if (room.onExit) {
+            room.onExit();
+        }
+    },
+
+    triggerLook: function(room) {
+        Notifications.notify(room.description);
+    },
+
     removeLootFromRoom: function (room, loot) {
         var i;
         for (i in room.loot) {
-            if (room.loot[i].toString() == x.toString()) {
+            if (room.loot[i].id == loot.id) {
                 room.loot.splice(i, 1);
             }
         }
@@ -2002,15 +2213,14 @@ var StateManager = {
         );
 
         // state categories
-        var cats = [
-            'features',     // big features   
-            'inventory',    // player inventory
-            'player',       // player stats
-            'timers',       // timer states
-            'game',         // mostly settings
-            'playStats',    // anything play related: time, loads
-            'calldown',     // values for calldown elements
-            'story',        // story progress and status
+        var cats = [ 
+            'inventory',  
+            'player',     
+            'timers',     
+            'game',       
+            'playStats',  
+            'calldown',  
+            'story',     
             'rooms'
         ];
 
@@ -2052,14 +2262,14 @@ var StateManager = {
         if (typeof value == 'number' && value > $SM.MAX_STORE) value = $SM.MAX_STORE;
 
         try {
-            eval('(' + fullPath + ') = value');
+            eval('(' + fullPath + ') = value');          
         } catch (e) {
             //parent doesn't exist, so make parent
             $SM.createState(stateName, value);
         }
 
         //stores values can not be negative
-        if (stateName.indexOf('stores') === 0 && $SM.get(stateName, true) < 0) {
+        if (stateName.indexOf('inventory') === 0 && $SM.get(stateName, true) < 0) {
             eval('(' + fullPath + ') = 0');
             Engine.log('WARNING: state:' + stateName + ' can not be a negative value. Set to 0 instead.');
         }
@@ -2101,8 +2311,19 @@ var StateManager = {
             old = 0;
             $SM.set(stateName, old + value, noEvent);
         } else if (typeof old != 'number' || typeof value != 'number') {
-            Engine.log('WARNING: Can not do math with state:' + stateName + ' or value:' + value + ' because at least one is not a number.');
-            err = 1;
+            if (typeof old.qty == 'number') {
+                if (typeof value == 'number') {
+                    $SM.set(stateName, old.qty + value, noEvent);
+                } else if (typeof value.qty == 'number') {
+                    $SM.set(stateName, old.qty + value.qty, noEvent);
+                } else {
+                    Engine.log('WARNING: Can not do math with state:' + stateName + ' or value:' + value + ' because at least one is not a number.');
+                    err = 1;
+                }
+            } else {
+                Engine.log('WARNING: Can not do math with state:' + stateName + ' or value:' + value + ' because at least one is not a number.');
+                err = 1;
+            }
         } else {
             $SM.set(stateName, old + value, noEvent); //setState handles event and save
         }
@@ -2257,6 +2478,8 @@ var Story = {
 
     activeStory: null,
 
+    playerMoves: 0,
+
     previousRoom: null,
     activeRoom: null,
 
@@ -2275,6 +2498,11 @@ var Story = {
         if (story == undefined) story = Story.setDefaultStory();
         Story.setStory(story);
 
+        // Update Player Moves
+        var moves = $SM.get('story.moves');
+        if (moves == undefined) moves = 0;
+        Story.playerMoves = moves;
+
         // Load Story
         Story.activeStory.init();
 
@@ -2282,57 +2510,115 @@ var Story = {
         var roomPanel = $('<div>').attr('id', 'gameRoomPanel').appendTo('#gameMain');
         Story.updateRoomPanel();
 
+        Story.checkUISettings();
+
         //subscribe to stateUpdates
         $.Dispatch('stateUpdate').subscribe(Story.handleStateUpdates);
+    },
+
+    checkUISettings: function () {
+        if (!Engine.ui.roomPanel) {
+            $('#gameRoomPanel').css({ 'display': 'none' });
+        } else {
+            $('#gameRoomPanel').css({ 'display': 'block' });
+        }
     },
 
     updateRoomPanel: function () {
         $('#gameRoomPanel').html(''); // Clear
 
+        var activeRoom = Room.getRoom(Story.activeRoom);
+
         // Header
         $('<div>').addClass('gamePanelHeader').text(Story.activeStory.STORY_NAME).appendTo('#gameRoomPanel');
-        $('<div>').addClass('gamePanelHeader').css({ 'font-size': '14px' }).text(Story.activeRoom.name).appendTo('#gameRoomPanel');
+        $('<div>').addClass('gamePanelHeader').css({ 'font-size': '14px', 'margin-bottom' : '10px' }).text(activeRoom.name).appendTo('#gameRoomPanel');
 
         // Exits
-        var northExit = Story.activeRoom.exits['north'];
+        var northExit = activeRoom.exits['north'];
         if (northExit == undefined) northExit = 'None';
         else if (northExit.visited != undefined && northExit.visited) northExit = northExit.name;
         else northExit = 'Unknown';
         $('<div>').addClass('roomExitItem').html('<b>North</b> - ' + northExit).appendTo('#gameRoomPanel');
 
-        var eastExit = Story.activeRoom.exits['east'];
+        var eastExit = activeRoom.exits['east'];
         if (eastExit == undefined) eastExit = 'None';
         else if (eastExit.visited != undefined && eastExit.visited) eastExit = eastExit.name;
         else eastExit = 'Unknown';
         $('<div>').addClass('roomExitItem').html('<b>East</b> - ' + eastExit).appendTo('#gameRoomPanel');
 
-        var southExit = Story.activeRoom.exits['south'];
+        var southExit = activeRoom.exits['south'];
         if (southExit == undefined) southExit = 'None';
         else if (southExit.visited != undefined && southExit.visited) southExit = southExit.name;
         else southExit = 'Unknown';
         $('<div>').addClass('roomExitItem').html('<b>South</b> - ' + southExit).appendTo('#gameRoomPanel');
 
-        var westExit = Story.activeRoom.exits['west'];
+        var westExit = activeRoom.exits['west'];
         if (westExit == undefined) westExit = 'None';
         else if (westExit.visited != undefined && westExit.visited) westExit = westExit.name;
         else westExit = 'Unknown';
         $('<div>').addClass('roomExitItem').html('<b>West</b> - ' + westExit).appendTo('#gameRoomPanel');
     },
 
-    go: function(direction) {
+    go: function (direction) {
+        var activeRoom = Room.getRoom(Story.activeRoom);
+        
+        if (direction == "back") {
+            if (Story.previousRoom == null) {
+                Notifications.notify("There is no room to go back too.");
+                return;
+            }
 
+            var previousRoom = Room.getRoom(Story.previousRoom);
+
+            previousRoom.canEnterFunc(); // Trigger Func
+            if (previousRoom.canEnter) {
+                var curRoom = activeRoom;
+
+                curRoom.triggerExit();
+                Story.setRoom(previousRoom);
+
+                Story.previousRoom = curRoom;
+            } else {
+                Notifications.notify(previousRoom.lockedDesc);
+            }
+        }
+
+        if (activeRoom.exits[direction] === undefined) {
+            Notifications.notify("There is no exit '" + direction + "'.");
+        } else {
+            activeRoom.exits[direction].canEnterFunc(); // Trigger Func
+            if (activeRoom.exits[direction].canEnter) {
+                var curRoom = activeRoom;
+
+                curRoom.triggerExit();
+                Story.setRoom(activeRoom.exits[direction]);
+
+                Story.previousRoom = curRoom;
+            } else {
+                Notifications.notify(activeRoom.exits[direction].lockedDesc);
+            }
+        }
     },
 
     look: function() {
-
+        Room.getRoom(Story.activeRoom).triggerLook();
     },
 
 
     setRoom: function(room) {
         if (room === undefined) return;
 
-        Story.activeRoom = room;
+        if (typeof room != 'object') {
+            room = Room.getRoom(room);
+        }
+
+        Story.activeRoom = room.id;
         $SM.set('story.room', Story.activeRoom);
+        $SM.set('story.moves', Story.playerMoves++);
+
+        // Trigger Room Enter
+        room.triggerEnter();
+        Story.updateRoomPanel();
     },
 
     setStory: function (story) {
@@ -2364,61 +2650,61 @@ var Story = {
 
 Events.Encounters = [
     // EXAMPLES
-    //{
-    //    title: 'Combat - Archie',
-    //    isAvailable: function () {
-    //        return true;
-    //    },
-    //    scenes: {
-    //        'start': {
-    //            combat: true,
-    //            enemy: 'archie',
-    //            enemyName: 'Archie',
-    //            deathMessage: 'Archie is dead',
-    //            damage: 1,
-    //            hit: 0.3,
-    //            attackDelay: 3,
-    //            health: 3,
-    //            loot: {
-    //                'tv remote': {
-    //                    itemObj: Items.MiscItems['tv remote'],
-    //                    min: 1,
-    //                    max: 1,
-    //                    chance: 1
-    //                }
-    //            },
-    //            notification: 'A wild Archie runs at you with arms help high'
-    //        }
-    //    }
-    //},
-    //{
-    //    title: 'Combat - Archie with a Gun',
-    //    isAvailable: function () {
-    //        return true;
-    //    },
-    //    scenes: {
-    //        'start': {
-    //            combat: true,
-    //            enemy: 'archie',
-    //            enemyName: 'Archie',
-    //            deathMessage: 'Archie is dead',
-    //            damage: 3,
-    //            hit: 0.2,
-    //            attackDelay: 4,
-    //            health: 3,
-    //            ranged: true,
-    //            loot: {
-    //                'tv remote': {
-    //                    itemObj: Items.MiscItems['tv remote'],
-    //                    min: 1,
-    //                    max: 1,
-    //                    chance: 1
-    //                }
-    //            },
-    //            notification: 'A wild Archie waving a gun around'
-    //        }
-    //    }
-    //}
+    {
+        title: 'Combat - Archie',
+        isAvailable: function () {
+            return true;
+        },
+        scenes: {
+            'start': {
+                combat: true,
+                enemy: 'archie',
+                enemyName: 'Archie',
+                deathMessage: 'Archie is dead',
+                damage: 1,
+                hit: 0.3,
+                attackDelay: 3,
+                health: 3,
+                loot: {
+                    'meat': {
+                        itemObj: Items.Food['meat'],
+                        min: 1,
+                        max: 3,
+                        chance: 1
+                    }
+                },
+                notification: 'A wild Archie runs at you with arms help high'
+            }
+        }
+    },
+    {
+        title: 'Combat - Archie with a Gun',
+        isAvailable: function () {
+            return true;
+        },
+        scenes: {
+            'start': {
+                combat: true,
+                enemy: 'archie',
+                enemyName: 'Archie',
+                deathMessage: 'Archie is dead',
+                damage: 3,
+                hit: 0.2,
+                attackDelay: 4,
+                health: 3,
+                ranged: true,
+                loot: {
+                    'meat': {
+                        itemObj: Items.Food['meat'],
+                        min: 1,
+                        max: 3,
+                        chance: 1
+                    }
+                },
+                notification: 'A wild Archie waving a gun around'
+            }
+        }
+    }
 ];
 Events.Global = [];
 Events.Story = [];
@@ -2457,29 +2743,113 @@ Story.LostIsland = {
 
     init: function () {
         Story.LostIsland.createRooms();
+        Story.LostIsland.createItems();
+        Story.LostIsland.createEvents();
+        Story.LostIsland.createExits();
 
-        Story.LostIsland.startStory();
+        Story.LostIsland.setDefaultRoom();
+
+        Story.LostIsland.loadStory();
     },
 
-    startStory: function () {
-        Story.setRoom(Story.LostIsland.DEFAULT_ROOM);
+    loadStory: function () {
+        var room = $SM.get('story.room');
+        if (room == undefined) room = Story.LostIsland.DEFAULT_ROOM;
+
+        Story.setRoom(room);
+    },
+
+    setDefaultRoom: function () {
+        Story.LostIsland.DEFAULT_ROOM = Room.getRoom('beach'); // Set Default Room
     },
 
     createRooms: function () {
         // Beach
-        var beach = Room.createRoom('beach', {
+        Room.createRoom('beach', {
             name: 'Beach',
-            description: 'A Beach with white sand all around and ocean as far as you can see.'
+            description: 'You wake up Lying face first on a sandy beach, while you spit out all the sand in your mouth you look around.[[break]]To your <b>south</b> all you can see is ocean as far as the eye can see, however to the <b>north</b> you can see a huge forest.',
+            loot: [
+                { type: 'misc', id: 'compass' }
+            ],
+            commands: [
+                [
+                    ['look south', 'look at ocean'],
+                    function () {
+                        Notifications.notify("You look at the ocean, it seems to go as far as you can see.");
+                    }
+                ],
+                [
+                    ['eat sand'],
+                    function () {
+                        Notifications.notify("Why?");
+                    }
+                ],
+                [
+                    ['take compass', 'pickup compass', 'pick up compass'],
+                    function () {
+                        Player.pickupItem('compass', 'beach');
+                        $SM.set('game.compass', 1);
+                        Notifications.notify("You pickup the compass from the floor, this should help you find your way around.");
+                    }
+                ]
+            ],
+            Events: [
+                {
+                    title: 'Combat - Large Crab',
+                    isAvailable: function () {
+                        return Story.playerMoves >= 1
+                    },
+                    scenes: {
+                        'start': {
+                            combat: true,
+                            enemy: 'large crab',
+                            enemyName: 'Large Crab',
+                            deathMessage: 'You killed the large crab',
+                            damage: 2,
+                            hit: 0.4,
+                            attackDelay: 3,
+                            health: 3,
+                            loot: {
+                                'meat': {
+                                    itemObj: Items.getItem('food', 'meat'),
+                                    min: 1,
+                                    max: 3,
+                                    chance: 1
+                                }
+                            },
+                            notification: 'A Crab the size of a person scurries across the beach towards you.'
+                        }
+                    }
+                }
+            ],
+            onEnter: function () {
+                if (Math.random() <= 0.2) { // 20% Chance
+                    Events.triggerRoomEvent(Room.getRoom('beach').Events);
+                }
+            }
         });
-        Story.LostIsland.DEFAULT_ROOM = beach; // Set Default Room
 
-        var forest = Room.createRoom('forest', {
+        Room.createRoom('forest-1', {
             name: 'Forest',
             description: 'A Forest'
         });
+    },
 
-        Room.addExit(beach, 'north', {
-            room: forest
+    createItems: function () {
+        // @TODO
+    },
+
+    createEvents: function () {
+        // @TODO
+    },
+
+    createExits: function () {
+        Room.addExit(Room.getRoom('beach'), 'north', {
+            room: Room.getRoom('forest-1')
+        });
+
+        Room.addExit(Room.getRoom('forest-1'), 'south', {
+            room: Room.getRoom('beach')
         });
     }
 
