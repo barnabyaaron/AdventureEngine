@@ -58,9 +58,9 @@
         Room.createRoom('beach', {
             name: 'Beach',
             description: 'You wake up Lying face first on a sandy beach, while you spit out all the sand in your mouth you look around.[[break]]To your <b>south</b> all you can see is ocean as far as the eye can see, however to the <b>north</b> you can see a huge forest.',
-            loot: [
-                { type: 'misc', id: 'compass' }
-            ],
+            loot: {
+                compass: 1  
+            },
             commands: [
                 [
                     ['look south', 'look at ocean'],
@@ -123,6 +123,8 @@
             name: 'Forest',
             description: 'A Forest'
         });
+
+        Room.updateRoomsState();
     },
 
     createItems: function () {

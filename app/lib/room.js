@@ -14,8 +14,36 @@
         $.Dispatch('stateUpdate').subscribe(Room.handleStateUpdates);
     },
 
-    updateRoomsState: function() {
-        $SM.setM('rooms', Room.ROOMS); // Update State
+    reloadRooms: function () {
+        var roomsaves = $SM.get('rooms');
+        if (roomsaves) {
+            for (var r in roomsaves) {
+                var save = roomsaves[r];
+                var room = Room.ROOMS[r];
+
+                room.visited = save.visited;
+                room.canEnter = save.canEnter;
+                room.loot = save.loot;
+
+                Room.ROOMS[r] = room; // Update Room
+            }
+        }
+    },
+
+    updateRoomsState: function () {
+        var roomSaves = [];
+
+        for (var r in Room.ROOMS) {
+            var room = Room.ROOMS[r];
+
+            roomSaves[r] = {
+                visited: room.visited,
+                canEnter: room.canEnter,
+                loot: room.loot
+            };
+        }
+
+        $SM.setM('rooms', roomSaves); // Update State
     },
 
     getRoom: function (id) {
@@ -36,24 +64,20 @@
         };
         r.lockedDesc = (options.lockedDesc != undefined) ? options.lockedDesc : "You cannot go that way.";
         
-        if (typeof options.commands == 'Array') {
+        if (typeof options.commands == 'object') {
             r.commands = options.commands;
         } else { r.commands = []; }
 
-        if (typeof options.loot == 'Array') {
+        if (typeof options.loot == 'object') {
             r.loot = options.loot;
             /*
-            [
-                'item id' = {
-                    item: itemObj,
-                    qty: 1,
-                    onPickup: function()
-                }
-            ]
+            {
+                'itemID': qty
+            }
             */
-        } else { r.loot = []; }
+        } else { r.loot = {}; }
 
-        if (typeof options.Events == 'Array') {
+        if (typeof options.Events == 'object') {
             r.Events = options.Events;
         } else { r.Events = []; }
 
@@ -65,7 +89,7 @@
             r.onExit = options.onExit;
         }
 
-        if (typeof options.exits == 'Array') {
+        if (typeof options.exits == 'object') {
             r.exits = options.exits;
             /*
             [
@@ -97,25 +121,33 @@
         };
 
         Room.ROOMS[id] = r;
-        Room.updateRoomsState();
 
         return r;
     },
 
-    updateRoom: function(room, options) {
-        if (typeof options.loot == 'array') {
+    updateRoom: function (room, options) {
+        var roomSave = $SM.get('rooms["' + room.id + '"]');
+
+        if (options.loot) {
             room.loot = options.loot;
+            roomSave.loot = room.loot;
         }
 
-        Room.ROOMS[room.id] = room;
-        Room.updateRoomsState();
+        if (options.canEnter) {
+            room.canEnter = options.canEnter;
+            roomSave.canEnter = room.canEnter;
+        }
+        
+        $SM.set('rooms["' + room.id + '"]', roomSave);
     },
 
     visitRoom: function(room) {
         room.visited = true;
 
-        Room.ROOMS[room.id] = room;
-        Room.updateRoomsState();
+        var roomSave = $SM.get('rooms["' + room.id + '"]');
+        roomSave.visited = true;
+
+        $SM.set('rooms["' + room.id + '"]', roomSave);
     },
 
     addExit: function (room, direction, options) {
@@ -162,6 +194,8 @@
     },
 
     handleStateUpdates: function (e) {
-        
+        if (e.category == 'rooms') {
+            Room.reloadRooms();
+        }
     }
 };

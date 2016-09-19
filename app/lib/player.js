@@ -15,7 +15,7 @@
 
         // Inventory
         Player.inventory = $SM.get('inventory');
-        if (Player.inventory == undefined) Player.inventory = [];
+        if (Player.inventory == undefined) Player.inventory = {};
 
         var playerPanel = $('<div>').attr('id', 'gamePlayerStatsPanel').appendTo('#gameMain');
         Player.updatePlayerPanel();
@@ -59,7 +59,7 @@
                 var id = 'game_player_perk_' + p.replace(' ', '-');
                 var r = $('#' + id);
 
-                if ($SM.get('character.perks["' + p + '"]') && r.length === 0) {
+                if ($SM.get('player.perks["' + p + '"]') && r.length === 0) {
                     r = $('<div>').attr('id', id).addClass('perkRow').appendTo(perksPanel);
                     $('<div>').addClass('row_key').text(p).appendTo(r);
                     $('<div>').addClass('tooltip bottom right').text(Story.activeStory.Perks[p].desc).appendTo(r);
@@ -78,11 +78,36 @@
         $('<div>').addClass('gamePanelHeader').text('Inventory').appendTo(invPanel);
 
         // Inventory Items
-        if (Player.inventory.length > 0) {
-            for (var i in Player.inventory) {
-                $('<span>').addClass('inventoryItem').text(Player.inventory[i].name + ' [' + Player.inventory[i].qty + ']').appendTo(invPanel);
+        var itemCount = 0;
+        for (var itemID in Player.inventory) {
+            var item = Items.getUnknownItem(itemID);
+
+            var flag = "";
+            switch (item.type) {
+                case "weapon":
+                    // @TODO Check if equip
+                    if ($SM.get('equipment["' + itemID + '"]')) {
+                        flag = "(E) ";
+                    }
+                    break;
+                case "upgrade":
+                    flag = "(U) ";
+                    break;
             }
-        } else {
+
+            var qty = $SM.get('inventory["' + itemID + '"]');
+            if (typeof qty != 'number' || isNaN(qty)) {
+                qty = 0;
+                $SM.set('inventory["' + itemID + '"]', 0);
+            }
+
+            if (qty > 0) {
+                $('<span>').addClass('inventoryItem').text(item.name + ' ' + flag + '[' + qty + ']').appendTo(invPanel);
+                itemCount++;
+            }
+        }
+
+        if (itemCount == 0) {
             $('<span>').addClass('inventoryItem').text('Empty').appendTo(invPanel);
         }
         
@@ -130,32 +155,40 @@
         return World.MEDS_HEAL;
     },
 
-    eatFood: function(item) {
-        if (item != undefined && item != null && typeof item == 'object' && item.type == 'food') {
-            if (Player.inventory[item.id] != undefined && Player.inventory[item.id].qty > 0) {
-                var have = Player.inventory[item.id].qty;
-
-                $SM.set('inventory["' + item.id + '"]', (have - 1));
-
-                // Heal
-                var heal = (item.heal != undefined) ? item.heal : 1;
-                Player.setHp((Player.health + heal));
-
-                Notifications.notify("You eat " + item.name);
-            } else {
-                Notifications.notify("You have no " + item.name + " to eat");
+    eatFood: function (item) {
+        if (item) {
+            if (typeof item == 'string') {
+                item = Items.getUnknownItem(item);
             }
-        } else {
-            Notifications.notify("You cannot eat that");
+
+            if (typeof item == 'object' && item.type == 'food') {
+                if (Player.inventory[item.id]) {
+                    var have = Player.inventory[item.id];
+
+                    $SM.set('inventory["' + item.id + '"]', (have - 1));
+
+                    // Heal
+                    var heal = (item.heal != undefined) ? item.heal : 1;
+                    Player.setHp((Player.health + heal));
+
+                    Notifications.notify("You eat " + item.name);
+                } else {
+                    Notifications.notify("You have no " + item.name + " to eat");
+                }
+            } else {
+                Notifications.notify("You cannot eat that");
+            }
         }
     },
 
-    pickupItem: function (item, room) {
+    pickupItem: function (item, qty, room) {
         if (typeof item != 'object') {
             item = Items.getUnknownItem(item);
         }
 
-        if (room != undefined) {
+        if (!qty) { qty = 1; }
+
+        if (room) {
             // Remove Item from room
             if (typeof room != 'object') {
                 room = Room.getRoom(room);
@@ -165,18 +198,9 @@
         }
         
         // Give Item to player
-        if (Player.inventory[item.id] != undefined) {
-            // Update Item
-            var curNum = Player.inventory[item.id].qty;
-            curNum = typeof curNum == 'number' ? curNum : 0;
-            var newNum = curNum + qty;
+        $SM.add('inventory["' + item.id + '"]', qty);
 
-            Player.inventory[item.id].qty = newNum;
-        } else {
-            // Add Item
-            Player.inventory[item.id] = item;
-            Player.inventory[item.id].qty = qty;
-        }
+        Notifications.notify("You pickup " + qty + " " + item.name);
         Player.updateInventory();
     },
 

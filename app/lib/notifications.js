@@ -59,11 +59,16 @@ var Notifications = {
         });
     },
 
+    scrollDown: function () {
+        var objDiv = document.getElementById("gameNotifications");
+        objDiv.scrollTop = objDiv.scrollHeight;
+    },
+
     printMessage: function (t) {
-        var text = $('<div>').addClass('notification').css('opacity', '0').html(t).prependTo('div#gameNotifications');
+        var text = $('<div>').addClass('notification').css('opacity', '0').html(t).appendTo('#gameNotifications');
         text.animate({ opacity: 1 }, 500, 'linear', function () {
             // Do this every time we add a new message, this way we never have a large backlog to iterate through. Keeps things faster.
-            Notifications.clearHidden();
+            Notifications.scrollDown();
         });
     },
 

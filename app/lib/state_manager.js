@@ -18,7 +18,8 @@ var StateManager = {
         // state categories
         var cats = [ 
             'inventory',  
-            'player',     
+            'player',
+            'equipment',
             'timers',     
             'game',       
             'playStats',  

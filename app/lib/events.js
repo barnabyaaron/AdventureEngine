@@ -74,7 +74,7 @@ var Events = {
 
         // Scene reward
         if (scene.reward) {
-            Events.getRewards(scene.reward);
+            $SM.addM('inventory', scene.reward);
         }
 
         $('#eventDescription', Events.eventPanel()).empty();
@@ -83,14 +83,6 @@ var Events = {
             Events.startCombat(scene);
         } else {
             Events.startStory(scene);
-        }
-    },
-
-    getRewards: function (items) {
-        for (var l in items) {
-            var loot = lootList[l];
-
-            Event.takeLoot(l, loot.itemObj, loot.qty);
         }
     },
 
@@ -137,14 +129,14 @@ var Events = {
         var numWeapons = 0;
         for (var k in Items.Weapons) {
             var weapon = Items.Weapons[k];
-            if (typeof Player.inventory[k] == 'object' && Player.inventory[k].qty > 0) {
+            if (Player.inventory[k]) {
                 if (typeof weapon.damage != 'number' || weapon.damage === 0) {
                     // Weapons that deal no damage don't count
                     numWeapons--;
                 } else if (weapon.cost) {
                     for (var c in weapon.cost) {
                         var num = weapon.cost[c];
-                        if (typeof Player.inventory[c] != 'object' || Player.inventory[c].qty < num) {
+                        if (typeof Player.inventory[c] != 'number' || Player.inventory[c] < num) {
                             // Can't use this weapon, so don't count it
                             numWeapons--;
                         }
@@ -159,7 +151,7 @@ var Events = {
             Events.createAttackButton('fists').prependTo(btns);
         }
 
-        if (typeof Player.inventory['medicine'] == 'object' && Player.inventory['medicine'].qty > 0) {
+        if ((Player.inventory['medicine'] || 0) !== 0) {
             Events.createUseMedsButton().appendTo(btns);
         }
 
@@ -180,7 +172,7 @@ var Events = {
             cost: { 'medicine': 1 }
         });
 
-        if (typeof Player.inventory['medicine'] != 'object' || Player.inventory['medicine'].qty === 0) {
+        if ((Player.inventory['medicine'] || 0) === 0) {
             Button.setDisabled(btn, true);
         }
 
@@ -207,7 +199,7 @@ var Events = {
         }
 
         for (var k in weapon.cost) {
-            if (typeof Player.inventory[k] != 'object' || typeof Player.inventory[k].qty != 'number' || Player.inventory[k].qty < weapon.cost[k]) {
+            if (typeof Player.inventory[k] != 'number' || Player.inventory[k] < weapon.cost[k]) {
                 Button.setDisabled(btn, true);
                 break;
             }
@@ -229,10 +221,11 @@ var Events = {
     },
 
     useMeds: function () {
-        if (Player.inventory['medicine'] != undefined && Player.inventory['medicine'].qty > 0) {
-            Player.inventory['medicine'].qty--;
+        if (Player.inventory['medicine']) {
+            Player.inventory['medicine']--;
             Player.updateInventory();
-            if (Player.inventory['medicine'].qty === 0) {
+
+            if (Player.inventory['medicine'] === 0) {
                 Button.setDisabled($('#meds'), true);
             }
 
@@ -257,12 +250,12 @@ var Events = {
             var weaponName = btn.attr('id').substring(7).replace('-', ' ');
             var weapon = Items.Weapons[weaponName];
             if (weapon.type == 'unarmed') {
-                if (!$SM.get('character.punches')) $SM.set('character.punches', 0);
+                if (!$SM.get('player.punches')) $SM.set('player.punches', 0);
 
-                $SM.add('character.punches', 1);
-                if ($SM.get('character.punches') == 50 && !$SM.hasPerk('boxer')) {
+                $SM.add('player.punches', 1);
+                if ($SM.get('player.punches') == 50 && !$SM.hasPerk('boxer')) {
                     $SM.addPerk('boxer');
-                } else if ($SM.get('character.punches') == 150 && !$SM.hasPerk('martial artist')) {
+                } else if ($SM.get('player.punches') == 150 && !$SM.hasPerk('martial artist')) {
                     $SM.addPerk('martial artist');
                 }
             }
@@ -270,16 +263,16 @@ var Events = {
                 var mod = {};
                 var out = false;
                 for (var k in weapon.cost) {
-                    if (Player.inventory[k] != undefined && (typeof Player.inventory[k].qty != 'number' || Player.inventory[k].qty < weapon.cost[k])) {
+                    if (typeof Player.inventory[k] != 'number' || Player.inventory[k] < weapon.cost[k]) {
                         return;
                     }
                     mod[k] = -weapon.cost[k];
-                    if (Player.inventory[k].qty - weapon.cost[k] < weapon.cost[k]) {
+                    if (Player.inventory[k] - weapon.cost[k] < weapon.cost[k]) {
                         out = true;
                     }
                 }
                 for (var k in mod) {
-                    Player.inventory[k].qty += mod[k];
+                    Player.inventory[k] += mod[k];
                 }
                 if (out) {
                     Button.setDisabled(btn, true);
@@ -484,7 +477,7 @@ var Events = {
                         });
                         Button.cooldown(leaveBtn.appendTo(btns));
 
-                        if (typeof Player.inventory['medicine'] == 'object' && Player.inventory['medicine'].qty > 0) {
+                        if ((Player.inventory['medicine'] || 0) !== 0) {
                             Events.createUseMedsButton(0).appendTo(btns);
                         }
                     }
@@ -500,41 +493,31 @@ var Events = {
         var lootPanel = $('<div>').attr('id', 'eventLootDrops').text('Loot:').appendTo(desc);
 
 
-        for (var l in lootList) {
-            var loot = lootList[l];
+        for (var id in lootList) {
+            var loot = lootList[id];
 
             if (Math.random() < loot.chance) {
                 var qty = Math.floor(Math.random() * (loot.max - loot.min)) + loot.min;
-                var lootRow = Events.drawLootRow(loot.itemObj, qty);
+                var lootRow = Events.drawLootRow(id, qty);
                 lootRow.appendTo(lootPanel);
 
                 // Take Loot
-                Events.takeLoot(l, loot.itemObj, qty);
+                Events.takeLoot(id, qty);
             }
         }
     },
 
     drawLootRow: function (item, qty) {
-        var lootRow = $('<div>').addClass('eventLootRow').data('item', item.name);
-        $('<span>').text(item.name + ' [' + qty + ']').appendTo(lootRow);
+        var obj = Items.getUnknownItem(item);
+
+        var lootRow = $('<div>').addClass('eventLootRow').data('item', obj.name);
+        $('<span>').text(obj.name + ' [' + qty + ']').appendTo(lootRow);
 
         return lootRow;
     },
 
-    takeLoot: function (lootID, item, qty) {
-        if (Player.inventory[lootID] != undefined) {
-            // Update Item
-            var curNum = Player.inventory[lootID].qty;
-            curNum = typeof curNum == 'number' ? curNum : 0;
-            var newNum = curNum + qty;
-
-            Player.inventory[lootID].qty = newNum;
-        } else {
-            // Add Item
-            Player.inventory[lootID] = item;
-            Player.inventory[lootID].qty = qty;
-        }
-        Player.updateInventory();
+    takeLoot: function (lootID, qty) {
+        $SM.add('inventory["' + lootID + '"]', qty);
     },
 
     createCombatPanel: function (desc, scene) {
@@ -641,10 +624,7 @@ var Events = {
                 costMod[store] = -info.cost[store];
             }
 
-            for (var k in costMod) {
-                Player.inventory[k] += costMod[k];
-            }
-            Player.updateInventory();
+            $SM.addM('inventory', costMod);
         }
 
         if (typeof info.onChoose == 'function') {
@@ -654,7 +634,7 @@ var Events = {
 
         // Reward
         if (info.reward) {
-            $SM.addM('stores', info.reward);
+            $SM.addM('inventory', info.reward);
         }
 
         Events.updateButtons();
@@ -783,7 +763,7 @@ var Events = {
     },
 
     handleStateUpdates: function (e) {
-        if ((e.category == 'stores') && Events.activeEvent() != null) {
+        if ((e.category == 'inventory') && Events.activeEvent() != null) {
             Events.updateButtons();
         }
     },
