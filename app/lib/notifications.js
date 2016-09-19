@@ -27,6 +27,10 @@ var Notifications = {
 
     notifyQueue: {},
 
+    send: function(text) {
+        Notifications.notify(text);
+    },
+
     notify: function (text, room, noQueue) {
         if (typeof text == 'undefined') return;
 
@@ -38,30 +42,30 @@ var Notifications = {
                 this.notifyQueue[room].push(text);
             }
         } else {
-            var textSplit = text.split('[[break]]');
-            
-            for (var i in textSplit) {
-                Notifications.printMessage(textSplit[i]);
-            }
+            Notifications.formatMessageAndPrint(text);
         }
         Engine.saveGame();
     },
 
-    clearHidden: function () {
-        // To fix some memory usage issues, we clear notifications that have been hidden.
-        // We use position().top here, because we know that the parent will be the same, so the position will be the same.
-        var bottom = $('#notifyGradient').position().top + $('#notifyGradient').outerHeight(true);
+    clear: function (lastCommand) {
+        $('#gameNotifications').html('');
 
-        $('.notification').each(function () {
-            if ($(this).position().top > bottom) {
-                $(this).remove();
-            }
-        });
+        if (lastCommand) {
+            Notifications.notify("> " + lastCommand);
+        }
     },
 
     scrollDown: function () {
         var objDiv = document.getElementById("gameNotifications");
         objDiv.scrollTop = objDiv.scrollHeight;
+    },
+
+    formatMessageAndPrint: function (t) {
+        var textSplit = t.split('[[break]]');
+
+        for (var i in textSplit) {
+            Notifications.printMessage(textSplit[i]);
+        }
     },
 
     printMessage: function (t) {
@@ -75,7 +79,7 @@ var Notifications = {
     printQueue: function (room) {
         if (typeof this.notifyQueue[room] != 'undefined') {
             while (this.notifyQueue[room].length > 0) {
-                Notifications.printMessage(this.notifyQueue[room].shift());
+                Notifications.formatMessageAndPrint(this.notifyQueue[room].shift());
             }
         }
     }

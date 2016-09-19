@@ -62,7 +62,9 @@
                 if ($SM.get('player.perks["' + p + '"]') && r.length === 0) {
                     r = $('<div>').attr('id', id).addClass('perkRow').appendTo(perksPanel);
                     $('<div>').addClass('row_key').text(p).appendTo(r);
-                    $('<div>').addClass('tooltip bottom right').text(Story.activeStory.Perks[p].desc).appendTo(r);
+
+                    if (Story.activeStory)
+                        $('<div>').addClass('tooltip bottom right').text(Story.activeStory.Perks[p].desc).appendTo(r);
                 }
             }
         } else {
@@ -102,7 +104,12 @@
             }
 
             if (qty > 0) {
-                $('<span>').addClass('inventoryItem').text(item.name + ' ' + flag + '[' + qty + ']').appendTo(invPanel);
+                if (qty > 1) {
+                    $('<span>').addClass('inventoryItem').text(item.name + ' ' + flag + '[' + qty + ']').appendTo(invPanel);
+                } else {
+                    $('<span>').addClass('inventoryItem').text(item.name + ' ' + flag).appendTo(invPanel);
+                }
+
                 itemCount++;
             }
         }
@@ -115,7 +122,7 @@
 
     updatePlayerStats: function () {
         // Update Health
-        var healthPanel = $('#gamePlayerStatsHealthCounter').text("HP: ");
+        var healthPanel = $('#gamePlayerStatsHealthCounter').html("HP: " + Player.health + "/" + Player.getMaxHealth() + " <br />");
         Player.createHPHearts(Player.health, healthPanel);
     },
 
@@ -181,7 +188,7 @@
         }
     },
 
-    pickupItem: function (item, qty, room) {
+    pickupItem: function (item, qty, room, noNotify) {
         if (typeof item != 'object') {
             item = Items.getUnknownItem(item);
         }
@@ -200,7 +207,9 @@
         // Give Item to player
         $SM.add('inventory["' + item.id + '"]', qty);
 
-        Notifications.notify("You pickup " + qty + " " + item.name);
+        if (!noNotify)
+            Notifications.notify("You pickup " + qty + " " + item.name);
+
         Player.updateInventory();
     },
 

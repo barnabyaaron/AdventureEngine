@@ -77,8 +77,9 @@
                 [
                     ['take compass', 'pickup compass', 'pick up compass'],
                     function () {
-                        Player.pickupItem('compass', 'beach');
-                        $SM.set('game.compass', 1);
+                        Player.pickupItem('compass', 1, 'beach', true);
+
+                        $SM.set('game.compass', true);
                         Notifications.notify("You pickup the compass from the floor, this should help you find your way around.");
                     }
                 ]
@@ -87,7 +88,7 @@
                 {
                     title: 'Combat - Large Crab',
                     isAvailable: function () {
-                        return Story.playerMoves >= 1
+                        return (Story.playerMoves > 1);
                     },
                     scenes: {
                         'start': {
@@ -101,9 +102,8 @@
                             health: 3,
                             loot: {
                                 'meat': {
-                                    itemObj: Items.getItem('food', 'meat'),
-                                    min: 1,
-                                    max: 3,
+                                    min: 2,
+                                    max: 6,
                                     chance: 1
                                 }
                             },

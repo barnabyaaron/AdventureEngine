@@ -36,7 +36,7 @@ body { background-color: #000; color: #FFF; }
 #gameWrapper #gameRoomPanel { position: absolute; right: 5px; top: 10px; width: 21%; border: 1px solid #545252; padding: 10px; height: 20%; }
 #gameWrapper #gamePlayerStatsPanel { position: absolute; right: 5px; top: calc(20% + 25px); width: 21%; border: 1px solid #545252; padding: 10px; }
 #gameWrapper #gamePlayerStatsPanel .gamePanelHeader { font-weight: bold; font-size: 16px; }
-#gameWrapper #gamePlayerStatsPanel .gamePlayerStatsSpacer { height: 10px; }
+#gameWrapper #gamePlayerStatsPanel .gamePlayerStatsSpacer { height: 10px; clear: both; }
 #gameWrapper #gameRoomPanel div, #gameWrapper #gamePlayerStatsPanel div { width: 100%; }
 
 #gameWrapper .fa-heart { color: red; margin-right: 5px; } 
@@ -48,7 +48,7 @@ body { background-color: #000; color: #FFF; }
 #gameWrapper .button .cooldown { position: absolute; top: 0px; left: 0px; z-index: -1; height: 100%; background-color: #DDDDDD; }
 
 /* Notifications */
-#gameWrapper #gameNotifications { height: 100%; width: 100%; overflow: hidden; position: absolute; left: 0px; }
+#gameWrapper #gameNotifications { height: 100%; width: 75%; overflow: hidden; position: absolute; left: 0px; }
 #gameWrapper #gameNotifications .notification { margin-bottom: 10px; }
 #gameWrapper #notifyGradient { position: absolute; top: 0px; left: 0px; height: 100%; width: 100%; background-color: #272823; background: -webkit-linear-gradient( rgba(39, 40, 35, 0) 0%, rgba(39, 40, 35, 1) 100% ); background: linear-gradient( rgba(39, 40, 35, 0) 0%, rgba(39, 40, 35, 1) 100% ); filter: alpha( Opacity=0, FinishOpacity=100, Style=1, StartX=0, StartY=0, FinishX=0, FinishY=500 ); }
 

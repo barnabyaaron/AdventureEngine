@@ -18,7 +18,6 @@ Events.Encounters = [
                 health: 3,
                 loot: {
                     'meat': {
-                        itemObj: Items.Food['meat'],
                         min: 1,
                         max: 3,
                         chance: 1
@@ -46,7 +45,6 @@ Events.Encounters = [
                 ranged: true,
                 loot: {
                     'meat': {
-                        itemObj: Items.Food['meat'],
                         min: 1,
                         max: 3,
                         chance: 1

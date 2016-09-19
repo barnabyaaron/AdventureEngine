@@ -107,6 +107,9 @@
                 var curRoom = activeRoom;
 
                 curRoom.triggerExit();
+
+                Notifications.clear(Commands.LAST_COMMAND); // Clear Notifications
+
                 Story.setRoom(previousRoom);
 
                 Story.previousRoom = curRoom;
@@ -118,16 +121,21 @@
         if (activeRoom.exits[direction] === undefined) {
             Notifications.notify("There is no exit '" + direction + "'.");
         } else {
-            activeRoom.exits[direction].canEnterFunc(); // Trigger Func
-            if (activeRoom.exits[direction].canEnter) {
+            var exitRoom = activeRoom.exits[direction].room;
+
+            exitRoom.canEnterFunc(); // Trigger Func
+            if (exitRoom.canEnter) {
                 var curRoom = activeRoom;
 
                 curRoom.triggerExit();
-                Story.setRoom(activeRoom.exits[direction]);
+
+                Notifications.clear(Commands.LAST_COMMAND); // Clear Notifications
+
+                Story.setRoom(exitRoom);
 
                 Story.previousRoom = curRoom;
             } else {
-                Notifications.notify(activeRoom.exits[direction].lockedDesc);
+                Notifications.notify(exitRoom.lockedDesc);
             }
         }
     },

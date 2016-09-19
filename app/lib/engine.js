@@ -68,9 +68,9 @@
             Notifications.init();       // Notifications Handler
             Items.init();               // Items Handler
             Room.init();                // Rooms Hander
+            Player.init();              // Player Handler
             Events.init();              // Events Handler
             Story.init();               // Story Handler
-            Player.init();              // Player Handler
             
             Engine.GAME_STARTED = true;
             $SM.set('game.started', Engine.GAME_STARTED);
@@ -87,7 +87,9 @@
         },
 
         updateUI: function () {
-            var hasCompas = ($SM.get('game.compass', true) === 'true');
+            var hasCompas = $SM.get('game.compass');
+            if (hasCompas == undefined) hasCompas = false;
+
             Engine.ui.roomPanel = hasCompas;
 
             Player.checkUISettings();
@@ -289,10 +291,6 @@
                 event.preventDefault(); // Prevent Enter from submitting form.
                 if (!Engine.keyLock && !Engine.GAME_OVER) {
                     var cmd = $('#commandTxt').val().toLowerCase();
-
-                    if (cmd != Commands.CHEAT_MODE_COMMAND)
-                        Notifications.notify("> " + cmd);
-
                     Commands.trigger(cmd);
                 }
 
@@ -375,8 +373,7 @@ $.Dispatch = function (id) {
 
 $(document).ready(function () {
     $('#startGameBtn').click(function () {
-        Engine.init();
-
         $('#devGameModal').modal('show');
+        Engine.init();
     });
 });

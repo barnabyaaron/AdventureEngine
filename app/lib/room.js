@@ -162,10 +162,11 @@
 
         if (!room.visited) {
             Room.visitRoom(room);
-
             Room.triggerLook(room);
+        } else {
+            Room.triggerLootInfo(room);
         }
-
+        
         if (room.onEnter) {
             room.onEnter();
         }
@@ -179,15 +180,22 @@
 
     triggerLook: function(room) {
         Notifications.notify(room.description);
+        Room.triggerLootInfo(room);
+    },
+
+    triggerLootInfo: function(room) {
+        var loot = room.loot;
+
+        for (var lootID in loot) {
+            var item = Items.getUnknownItem(lootID);
+
+            if (item && item.roomDesc)
+                Notifications.notify(item.roomDesc);
+        }
     },
 
     removeLootFromRoom: function (room, loot) {
-        var i;
-        for (i in room.loot) {
-            if (room.loot[i].id == loot.id) {
-                room.loot.splice(i, 1);
-            }
-        }
+        delete room.loot[loot.id];
 
         Room.ROOMS[room.id] = room;
         Room.updateRoomsState();

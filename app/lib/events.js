@@ -129,7 +129,7 @@ var Events = {
         var numWeapons = 0;
         for (var k in Items.Weapons) {
             var weapon = Items.Weapons[k];
-            if (Player.inventory[k]) {
+            if (typeof Player.inventory[k] == 'number' && Player.inventory[k] > 0) {
                 if (typeof weapon.damage != 'number' || weapon.damage === 0) {
                     // Weapons that deal no damage don't count
                     numWeapons--;
@@ -707,8 +707,10 @@ var Events = {
         if (Events.activeEvent() == null) {
             var possibleEvents = [];
             for (var e in events) {
-                if (e.isAvailable()) {
-                    possibleEvents.push(e);
+                var event = events[e];
+
+                if (event != undefined && event.isAvailable()) {
+                    possibleEvents.push(event);
                 }
             }
 

@@ -132,7 +132,7 @@
         for (var type in Items.ItemPool) {
             var items = Items.ItemPool[type];
 
-            if ($.inArray(name, items) > -1) {
+            if (name in items) {
                 // Item Found
                 return items[name];
             }

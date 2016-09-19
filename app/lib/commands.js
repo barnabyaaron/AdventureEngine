@@ -3,6 +3,9 @@
     CHEAT_MODE: false,
     CHEAT_MODE_COMMAND: 'toggle debug',
 
+    CLEAR_NEXT: false,
+    LAST_COMMAND: '',
+
     options: {},
 
     init: function(options) {
@@ -16,6 +19,17 @@
     },
 
     trigger: function (command) {
+        // IF CLEAR SET - Clear Notifications
+        if (Notifications.CLEAR_NEXT) {
+            Notifications.clear();
+        }
+        
+        // Store Last Command
+        Notifications.LAST_COMMAND = command;
+
+        // Print Command
+        Notifications.notify("> " + command);
+            
         // Command Event Prevent normal actives
         if (Story.options.inCommandEvent) {
             return Story.options.commandEventCallback(command);
@@ -23,10 +37,10 @@
 
         // Check Current Room Commands
         var curRoom = Room.getRoom(Story.activeRoom);
-        if ((curRoom != undefined && curRoom != null) && curRoom.commands != undefined && curRoom.commands.length > 0) {
-            for (var c in curRoom.command) {
-                var validCommands = curRoom.command[c][0];
-                var cmdCallback = curRoom.command[c][1];
+        if ((curRoom) && curRoom.commands && curRoom.commands.length > 0) {
+            for (var c in curRoom.commands) {
+                var validCommands = curRoom.commands[c][0];
+                var cmdCallback = curRoom.commands[c][1];
 
                 for (var cmd in validCommands) {
                     if (command == validCommands[cmd]) {
