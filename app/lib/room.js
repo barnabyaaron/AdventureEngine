@@ -53,12 +53,28 @@
     createRoom: function(id, options) {
         var r = {};
 
+        // Check for room save
+        var roomSave = $SM.get('rooms["' + id + '"]');
+        
         r.id = id;
         r.name = options.name;
         r.description = options.description;
-        r.visited = false;
 
-        r.canEnter = (options.canEnter != undefined) ? options.canEnter : true;
+        // Check Saved Details
+        if (roomSave) {
+            r.visited = roomSave.visited;
+            r.canEnter = roomSave.canEnter;
+            r.loot = roomSave.loot;
+        } else {
+            r.visited = false;
+
+            r.canEnter = (options.canEnter != undefined) ? options.canEnter : true;
+
+            if (typeof options.loot == 'object') {
+                r.loot = options.loot;  /* { 'itemID': qty } */
+            } else { r.loot = {}; }
+        }
+
         r.canEnterFunc = (typeof options.canEnterFunc == 'function') ? options.canEnterFunc : function () {
             /* Default Can Enter Function */
         };
@@ -67,15 +83,6 @@
         if (typeof options.commands == 'object') {
             r.commands = options.commands;
         } else { r.commands = []; }
-
-        if (typeof options.loot == 'object') {
-            r.loot = options.loot;
-            /*
-            {
-                'itemID': qty
-            }
-            */
-        } else { r.loot = {}; }
 
         if (typeof options.Events == 'object') {
             r.Events = options.Events;

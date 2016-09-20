@@ -76,6 +76,7 @@
             $SM.set('game.started', Engine.GAME_STARTED);
 
             Engine.updateUI();
+            Engine.autoFocus();
         },
 
         browserValid: function () {
@@ -310,6 +311,13 @@
 
         autoSelect: function (selector) {
             $(selector).focus().select();
+        },
+
+        autoFocus: function (element) {
+            if (element == undefined)
+                return $('#commandTxt').focus();
+
+            $(element).focus();
         },
 
         handleStateUpdates: function (e) {

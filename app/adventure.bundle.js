@@ -200,7 +200,7 @@ var Commands = {
             if (Commands.triggerCheatCommands(command)) { return; }
         }
         
-        cmdSplit = command.split(" ");
+        var cmdSplit = command.split(" ");
         
         switch (cmdSplit[0]) {
             case "go":
@@ -224,13 +224,13 @@ var Commands = {
                 return Commands.triggerGo("west");
 
             case "look":
-                return Commands.triggerLook();
+                return Commands.triggerLook(command);
 
             case "use":
-                return command.triggerUse(command);
+                return Commands.triggerUse(command);
 
             case "eat":
-                return command.triggerEat(command);
+                return Commands.triggerEat(command);
 
             default:
                 return Commands.triggerInvalidCommand();
@@ -249,6 +249,13 @@ var Commands = {
             case "trigger event":
                 Events.triggerEvent();
                 return true;
+            case "trigger room event":
+                var room = Room.getRoom(Story.activeRoom);
+                if (room) {
+                    Events.triggerRoomEvent(room.Events);
+                    return true;
+                }
+                break;
             case "give item":
                 Notifications.notify("What Item do you want ?");
 
@@ -273,7 +280,7 @@ var Commands = {
 
         var item = Items.getUnknownItem(itemName);
         if (item != null) {
-            // @TODO Use item
+            Player.useItem(item);
         }
     },
 
@@ -299,8 +306,21 @@ var Commands = {
         }
     },
 
-    triggerLook: function() {
-        Story.look();
+    triggerLook: function (command) {
+        var cmdSplit = command.split(" ");
+
+        if (cmdSplit[1] == 'at') {
+            var itemName = command.replace("look at ", "");
+            var item = Items.getUnknownItem(itemName);
+
+            if (item != null) {
+                Player.lookAtItem(item);
+            } else {
+                Notifications.notify("No such item.");
+            }
+        } else {
+            Story.look();
+        }
     },
 
     handleStateUpdates: function (e) { }
@@ -384,6 +404,7 @@ var Commands = {
             $SM.set('game.started', Engine.GAME_STARTED);
 
             Engine.updateUI();
+            Engine.autoFocus();
         },
 
         browserValid: function () {
@@ -620,6 +641,13 @@ var Commands = {
             $(selector).focus().select();
         },
 
+        autoFocus: function (element) {
+            if (element == undefined)
+                return $('#commandTxt').focus();
+
+            $(element).focus();
+        },
+
         handleStateUpdates: function (e) {
             if (e.category == 'game' && e.stateName.indexOf('game.compass') === 0) {
                 Engine.updateUI();
@@ -745,6 +773,10 @@ var Events = {
 
     // Load an event scene
     loadScene: function (name) {
+        if (name == 'end') {
+            return Events.endEvent();
+        }
+
         Engine.log('loading scene: ' + name);
         Events.activeScene = name;
         var scene = Events.activeEvent().scenes[name];
@@ -756,7 +788,7 @@ var Events = {
 
         // Notify the scene change
         if (scene.notification) {
-            Notifications.notify(null, scene.notification);
+            Notifications.notify(scene.notification);
         }
 
         // Scene reward
@@ -1328,7 +1360,7 @@ var Events = {
 
         // Notification
         if (info.notification) {
-            Notifications.notify(null, info.notification);
+            Notifications.notify(info.notification);
         }
 
         // Next Scene
@@ -1446,8 +1478,7 @@ var Events = {
             Engine.keyLock = false;
             Button.saveCooldown = true;
 
-            // Force refocus on the body. I hate you, IE.
-            $('body').focus();
+            Engine.autoFocus();
         });
     },
 
@@ -1516,27 +1547,23 @@ var Items = {
             type: 'unarmed',
             damage: 1,
             cooldown: 2
+        },
+        'knife': {
+            id: 'knife',
+            name: 'Knife',
+            verb: 'stab',
+            type: 'melee',
+            damage: 3,
+            cooldown: 3
+        },
+        'hand gun': {
+            id: 'hand gun',
+            name: 'Hand Gun',
+            verb: 'shoot',
+            damage: 6,
+            cooldown: 5,
+            cost: { 'bullets': 1 }
         }
-        // Examples
-        //'bone spear': {
-        //    verb: 'stab',
-        //    type: 'melee',
-        //    damage: 2,
-        //    cooldown: 2
-        //},
-        //'iron sword': {
-        //    verb: 'swing',
-        //    type: 'melee',
-        //    damage: 4,
-        //    cooldown: 2
-        //},
-        //'rifle': {
-        //    verb: 'shoot',
-        //    type: 'ranged',
-        //    damage: 5,
-        //    cooldown: 1,
-        //    cost: { 'bullets': 1 }
-        //},
     },
 
     Food: {
@@ -1553,6 +1580,8 @@ var Items = {
             it: 'torch',
             name: 'Torch',
             type: 'tool',
+            maximum: 10,
+            maxMsg: "You don't need any more",
             buildMsg: 'a torch to keep the dark away',
             cost: function () {
                 return {
@@ -1561,29 +1590,20 @@ var Items = {
                 };
             }
         }
-        // Examples
-        //'bone spear': {
-        //    id: 'bone spear',
-        //    name: 'bone spear',
-        //    type: 'weapon',
-        //    maximum: 10,
-        //    availableMsg: 'builder says she can make traps to catch any creatures might still be alive out there',
-        //    buildMsg: "this spear's not elegant, but it's pretty good at stabbing",
-        //    maxMsg: "more traps won't help now",
-        //    cost: function () {
-        //        return {
-        //            'wood': 2,
-        //            'bone': 1
-        //        };
-        //    }
-        //}
     },
 
     Ammo: {
         'medicine': {
             id: 'medicine',
             name: 'Medicine',
-            type: 'ammo'
+            type: 'ammo',
+            use: function () {
+                var hp = Player.health;
+                hp += Player.medsHeal();
+                hp = hp > Player.getMaxHealth() ? Player.getMaxHealth() : hp;
+                Player.setHp(hp);
+                return true;
+            }
         },
         'bullets': {
             id: 'bullets',
@@ -1597,16 +1617,9 @@ var Items = {
             id: 'compass',
             name: 'Compass',
             type: 'misc',
-            desc: 'A golden compass',
+            desc: 'A golden compass that points to north',
             roomDesc: 'You notice a golden <b>compass</b> lying on the floor.'
         }
-        // Example
-        //'tv remote': {
-        //    name: 'TV Remote',
-        //    type: 'misc',
-        //    desc: 'A Universial TV Remote',
-        //    roomDesc: 'A TV Remote lies on the table in the centre of the room.'
-        //}
     },
 
     init: function (options) {
@@ -1670,6 +1683,8 @@ var Items = {
                 item.availableMsg = options.availableMsg;
                 item.buildMsg = options.buildMsg;
                 item.maxMsg = (options.maxMsg != undefined) ? options.maxMsg : "You cannot have any more of these.";
+            } else if (type == "food") {
+                item.heal = (options.heal != undefined) ? options.heal : 1;
             }
 
             // Create Items
@@ -1920,9 +1935,9 @@ var Player = {
 
             if (qty > 0) {
                 if (qty > 1) {
-                    $('<span>').addClass('inventoryItem').text(item.name + ' ' + flag + '[' + qty + ']').appendTo(invPanel);
+                    $('<div>').addClass('inventoryItem').text(item.name + ' ' + flag + '[' + qty + ']').appendTo(invPanel);
                 } else {
-                    $('<span>').addClass('inventoryItem').text(item.name + ' ' + flag).appendTo(invPanel);
+                    $('<div>').addClass('inventoryItem').text(item.name + ' ' + flag).appendTo(invPanel);
                 }
 
                 itemCount++;
@@ -1930,7 +1945,7 @@ var Player = {
         }
 
         if (itemCount == 0) {
-            $('<span>').addClass('inventoryItem').text('Empty').appendTo(invPanel);
+            $('<div>').addClass('inventoryItem').text('Empty').appendTo(invPanel);
         }
         
     },
@@ -1974,7 +1989,54 @@ var Player = {
     },
 
     medsHeal: function () {
-        return World.MEDS_HEAL;
+        return Player.MEDS_HEAL;
+    },
+
+    useItem: function (item) {
+        if (item) {
+            if (typeof item == 'string') {
+                item = Items.getUnknownItem(item);
+            }
+
+            if (typeof item == 'object') {
+                if (Player.inventory[item.id]) {
+                    if (item.use != undefined) {
+                        var have = Player.inventory[item.id];
+
+                        var used = item.use(); // Run use function
+
+                        if (used) {
+                            // Remove Item
+                            $SM.set('inventory["' + item.id + '"]', (have - 1));
+                        }
+                    } else {
+                        Notifications.notify("You cannot use that");
+                    }
+                } else {
+                    Notifications.notify("You don't have that item");
+                }
+            }
+        }
+    },
+
+    lookAtItem: function (item) {
+        if (item) {
+            if (typeof item == 'string') {
+                item = Items.getUnknownItem(item);
+            }
+
+            if (typeof item == 'object') {
+                if (Player.inventory[item.id]) {
+                    if (item.desc != undefined) {
+                        Notifications.notify(item.desc);
+                    } else {
+                        Notifications.notify("There is nothing to say about that");
+                    }
+                } else {
+                    Notifications.notify("You don't have that item to look at");
+                }
+            }
+        }
     },
 
     eatFood: function (item) {
@@ -1986,14 +2048,24 @@ var Player = {
             if (typeof item == 'object' && item.type == 'food') {
                 if (Player.inventory[item.id]) {
                     var have = Player.inventory[item.id];
+                    var heal = (item.heal != undefined) ? item.heal : 1;
+                    var healthRequired = Player.getMaxHealth() - Player.health;
+
+                    // Check if need to heal
+                    if (healthRequired == 0) {
+                        // Cannot heal
+                        Notifications.notify("You don't need to heal at full health");
+                        return;
+                    } else if (heal > (healthRequired)) {
+                        heal = healthRequired;
+                    }
 
                     $SM.set('inventory["' + item.id + '"]', (have - 1));
 
                     // Heal
-                    var heal = (item.heal != undefined) ? item.heal : 1;
                     Player.setHp((Player.health + heal));
 
-                    Notifications.notify("You eat " + item.name);
+                    Notifications.notify("You eat " + item.name + " (heal " + heal + " hearts)");
                 } else {
                     Notifications.notify("You have no " + item.name + " to eat");
                 }
@@ -2123,12 +2195,28 @@ var Room = {
     createRoom: function(id, options) {
         var r = {};
 
+        // Check for room save
+        var roomSave = $SM.get('rooms["' + id + '"]');
+        
         r.id = id;
         r.name = options.name;
         r.description = options.description;
-        r.visited = false;
 
-        r.canEnter = (options.canEnter != undefined) ? options.canEnter : true;
+        // Check Saved Details
+        if (roomSave) {
+            r.visited = roomSave.visited;
+            r.canEnter = roomSave.canEnter;
+            r.loot = roomSave.loot;
+        } else {
+            r.visited = false;
+
+            r.canEnter = (options.canEnter != undefined) ? options.canEnter : true;
+
+            if (typeof options.loot == 'object') {
+                r.loot = options.loot;  /* { 'itemID': qty } */
+            } else { r.loot = {}; }
+        }
+
         r.canEnterFunc = (typeof options.canEnterFunc == 'function') ? options.canEnterFunc : function () {
             /* Default Can Enter Function */
         };
@@ -2137,15 +2225,6 @@ var Room = {
         if (typeof options.commands == 'object') {
             r.commands = options.commands;
         } else { r.commands = []; }
-
-        if (typeof options.loot == 'object') {
-            r.loot = options.loot;
-            /*
-            {
-                'itemID': qty
-            }
-            */
-        } else { r.loot = {}; }
 
         if (typeof options.Events == 'object') {
             r.Events = options.Events;
@@ -2619,25 +2698,25 @@ var Story = {
         // Exits
         var northExit = activeRoom.exits['north'];
         if (northExit == undefined) northExit = 'None';
-        else if (northExit.visited != undefined && northExit.visited) northExit = northExit.name;
+        else if (northExit.room.visited != undefined && northExit.room.visited) northExit = northExit.room.name;
         else northExit = 'Unknown';
         $('<div>').addClass('roomExitItem').html('<b>North</b> - ' + northExit).appendTo('#gameRoomPanel');
 
         var eastExit = activeRoom.exits['east'];
         if (eastExit == undefined) eastExit = 'None';
-        else if (eastExit.visited != undefined && eastExit.visited) eastExit = eastExit.name;
+        else if (eastExit.room.visited != undefined && eastExit.room.visited) eastExit = eastExit.room.name;
         else eastExit = 'Unknown';
         $('<div>').addClass('roomExitItem').html('<b>East</b> - ' + eastExit).appendTo('#gameRoomPanel');
 
         var southExit = activeRoom.exits['south'];
         if (southExit == undefined) southExit = 'None';
-        else if (southExit.visited != undefined && southExit.visited) southExit = southExit.name;
+        else if (southExit.room.visited != undefined && southExit.room.visited) southExit = southExit.room.name;
         else southExit = 'Unknown';
         $('<div>').addClass('roomExitItem').html('<b>South</b> - ' + southExit).appendTo('#gameRoomPanel');
 
         var westExit = activeRoom.exits['west'];
         if (westExit == undefined) westExit = 'None';
-        else if (westExit.visited != undefined && westExit.visited) westExit = westExit.name;
+        else if (westExit.room.visited != undefined && westExit.room.visited) westExit = westExit.room.name;
         else westExit = 'Unknown';
         $('<div>').addClass('roomExitItem').html('<b>West</b> - ' + westExit).appendTo('#gameRoomPanel');
     },
@@ -2647,7 +2726,7 @@ var Story = {
         
         if (direction == "back") {
             if (Story.previousRoom == null) {
-                Notifications.notify("There is no room to go back too.");
+                Notifications.notify("There is nowhere to go back too.");
                 return;
             }
 
@@ -2678,10 +2757,15 @@ var Story = {
             if (exitRoom.canEnter) {
                 var curRoom = activeRoom;
 
+                if (activeRoom.exits[direction].onChange != undefined && typeof activeRoom.exits[direction].onChange == 'function') {
+                    var result = activeRoom.exits[direction].onChange();
+                    if (!result) {
+                        return;
+                    }
+                }
+
                 curRoom.triggerExit();
-
                 Notifications.clear(Commands.LAST_COMMAND); // Clear Notifications
-
                 Story.setRoom(exitRoom);
 
                 Story.previousRoom = curRoom;
@@ -2896,9 +2980,9 @@ Story.LostIsland = {
                             enemyName: 'Large Crab',
                             deathMessage: 'You killed the large crab',
                             damage: 2,
-                            hit: 0.4,
+                            hit: 0.5,
                             attackDelay: 3,
-                            health: 3,
+                            health: 5,
                             loot: {
                                 'meat': {
                                     min: 2,
@@ -2920,14 +3004,167 @@ Story.LostIsland = {
 
         Room.createRoom('forest-1', {
             name: 'Forest',
-            description: 'A Forest'
+            description: 'You enter a huge forest with trees so high you can hardly see the sky, It casts a large shadow making it almost dark inside the forest.[[break]]You see paths in every direction, to the <b>south</b> you see the beach, <b>west</b> you hear the sound of running water, both <b>east</b> and <b>north</b> you can only see forest.',
+            commands: [],
+            Events: [
+                {
+                    title: 'Mysterious Smoke',
+                    isAvailable: function () {
+                        return !$SM.get('timers.smokeEvent', true);
+                    },
+                    scenes: {
+                        'start': {
+                            text: [
+                                'A black mysterious smoke surrounds you and you start to feel tired.'
+                            ],
+                            notification: 'A black mysterious smoke surrounds you and you start to feel tired.',
+                            buttons: {
+                                'leave': {
+                                    text: 'wake up',
+                                    cooldown: 4,
+                                    onChoose: function () {
+                                        Notifications.clear(Commands.LAST_COMMAND); // Clear Notifications
+                                        Notifications.notify('As you wake up things seem different, like your in a different part of the forest.');
+
+                                        // get random forest room
+                                        var roomNum = Math.floor(Math.random() * (4 - 2 + 1) + 2);
+                                        Story.setRoom('forest-' + roomNum);
+                                    },
+                                    nextScene: 'end'
+                                    
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    title: 'Wild Beast',
+                    isAvailable: function () {
+                        return true;
+                    },
+                    scenes: {
+                        'start': {
+                            text: [
+                                'As you look around the forest you see a large animal in the distance'
+                            ],
+                            notification: 'You see a large animal in the distance',
+                            buttons: {
+                                'investigate': {
+                                    text: 'Investigate',
+                                    nextScene: { 0.6: 'fight', 0.9: 'friendly', 1: 'runs' }
+                                },
+                                'ignore': {
+                                    text: 'Ignore',
+                                    nextScene: { 0.3: 'fight', 1: 'end' }
+                                }
+                            }
+                        },
+                        'fight': {
+                            combat: true,
+                            enemy: 'large bear',
+                            enemyName: 'Large Bear',
+                            damage: 2,
+                            hit: 0.5,
+                            attackDelay: 4,
+                            health: 8,
+                            notification: 'A large bear runs at you',
+                            deathMessage: 'You killed the bear',
+                            loot: {
+                                'meat': {
+                                    min: 2,
+                                    max: 6,
+                                    chance: 1
+                                }
+                            },
+                            buttons: {
+                                'leave': {
+                                    text: 'leave',
+                                    cooldown: Events._LEAVE_COOLDOWN,
+                                    nextScene: 'end'
+                                }
+                            }
+                        },
+                        'friendly': {
+                            text: [
+                                "As you get closer the the animal you notice it's attualy a large chicken",
+                                "It doesn't seem aggressive so you reach out to touch and before you can it scurries away",
+                                "As it does you notice some large eggs on the floor"
+                            ],
+                            loot: {
+                                'egg': {
+                                    min: 1,
+                                    max: 5,
+                                    change: 1
+                                }
+                            },
+                            buttons: {
+                                'leave': {
+                                    text: 'Take and Leave',
+                                    cooldown: Events._LEAVE_COOLDOWN,
+                                    nextScene: 'end'
+                                }
+                            }
+                        },
+                        'runs': {
+                            text: [
+                                'As you approch the animal it spots you and runs away out of sight'
+                            ],
+                            buttons: {
+                                'leave': {
+                                    text: 'leave',
+                                    nextScene: 'end'
+                                }
+                            }
+                        }
+                    }
+                }
+            ],
+            onEnter: function () {
+                // Check if have compass
+                if (!Player.inventory['compass']) {
+                    // because the player dosn't have a compass give a 50% change to move to a random forest room.
+                    if (Math.random() <= 0.5) { // 50% Chance
+                        Notifications.clear(Commands.LAST_COMMAND); // Clear Notifications
+                        Notifications.notify('You wonder around the forest not really knowing where to go, you start to lose your way and get lost.');
+
+                        // get random forest room
+                        var roomNum = Math.floor(Math.random() * (4 - 2 + 1) + 2);
+                        Story.setRoom('forest-' + roomNum);
+                    }
+                }
+
+                // 40% Chance to trigger room events
+                if (Math.random() <= 0.4) { // 40% Chance
+                    Events.triggerRoomEvent(Room.getRoom('forest-1').Events);
+                }
+            }
+        });
+
+        Room.createRoom('forest-2', {
+            name: 'Forest',
+            description: 'Forest 2'
+        });
+
+        Room.createRoom('forest-3', {
+            name: 'Forest',
+            description: 'Forest 3'
+        });
+
+        Room.createRoom('forest-4', {
+            name: 'Forest',
+            description: 'Forest 4'
         });
 
         Room.updateRoomsState();
     },
 
     createItems: function () {
-        // @TODO
+        Items.addItem('food', 'egg', {
+            name: 'egg',
+            type: 'food',
+            desc: 'A larger than normal egg',
+            heal: 2
+        });
     },
 
     createEvents: function () {
@@ -2941,6 +3178,30 @@ Story.LostIsland = {
 
         Room.addExit(Room.getRoom('forest-1'), 'south', {
             room: Room.getRoom('beach')
+        });
+
+        Room.addExit(Room.getRoom('forest-1'), 'north', {
+            room: Room.getRoom('forest-2')
+        });
+
+        Room.addExit(Room.getRoom('forest-2'), 'south', {
+            room: Room.getRoom('forest-1')
+        });
+
+        Room.addExit(Room.getRoom('forest-2'), 'east', {
+            room: Room.getRoom('forest-3')
+        });
+
+        Room.addExit(Room.getRoom('forest-3'), 'west', {
+            room: Room.getRoom('forest-2')
+        });
+
+        Room.addExit(Room.getRoom('forest-3'), 'north', {
+            room: Room.getRoom('forest-4')
+        });
+
+        Room.addExit(Room.getRoom('forest-4'), 'south', {
+            room: Room.getRoom('forest-3')
         });
     }
 

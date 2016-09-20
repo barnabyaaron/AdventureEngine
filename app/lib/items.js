@@ -11,27 +11,23 @@
             type: 'unarmed',
             damage: 1,
             cooldown: 2
+        },
+        'knife': {
+            id: 'knife',
+            name: 'Knife',
+            verb: 'stab',
+            type: 'melee',
+            damage: 3,
+            cooldown: 3
+        },
+        'hand gun': {
+            id: 'hand gun',
+            name: 'Hand Gun',
+            verb: 'shoot',
+            damage: 6,
+            cooldown: 5,
+            cost: { 'bullets': 1 }
         }
-        // Examples
-        //'bone spear': {
-        //    verb: 'stab',
-        //    type: 'melee',
-        //    damage: 2,
-        //    cooldown: 2
-        //},
-        //'iron sword': {
-        //    verb: 'swing',
-        //    type: 'melee',
-        //    damage: 4,
-        //    cooldown: 2
-        //},
-        //'rifle': {
-        //    verb: 'shoot',
-        //    type: 'ranged',
-        //    damage: 5,
-        //    cooldown: 1,
-        //    cost: { 'bullets': 1 }
-        //},
     },
 
     Food: {
@@ -48,6 +44,8 @@
             it: 'torch',
             name: 'Torch',
             type: 'tool',
+            maximum: 10,
+            maxMsg: "You don't need any more",
             buildMsg: 'a torch to keep the dark away',
             cost: function () {
                 return {
@@ -56,29 +54,20 @@
                 };
             }
         }
-        // Examples
-        //'bone spear': {
-        //    id: 'bone spear',
-        //    name: 'bone spear',
-        //    type: 'weapon',
-        //    maximum: 10,
-        //    availableMsg: 'builder says she can make traps to catch any creatures might still be alive out there',
-        //    buildMsg: "this spear's not elegant, but it's pretty good at stabbing",
-        //    maxMsg: "more traps won't help now",
-        //    cost: function () {
-        //        return {
-        //            'wood': 2,
-        //            'bone': 1
-        //        };
-        //    }
-        //}
     },
 
     Ammo: {
         'medicine': {
             id: 'medicine',
             name: 'Medicine',
-            type: 'ammo'
+            type: 'ammo',
+            use: function () {
+                var hp = Player.health;
+                hp += Player.medsHeal();
+                hp = hp > Player.getMaxHealth() ? Player.getMaxHealth() : hp;
+                Player.setHp(hp);
+                return true;
+            }
         },
         'bullets': {
             id: 'bullets',
@@ -92,16 +81,9 @@
             id: 'compass',
             name: 'Compass',
             type: 'misc',
-            desc: 'A golden compass',
+            desc: 'A golden compass that points to north',
             roomDesc: 'You notice a golden <b>compass</b> lying on the floor.'
         }
-        // Example
-        //'tv remote': {
-        //    name: 'TV Remote',
-        //    type: 'misc',
-        //    desc: 'A Universial TV Remote',
-        //    roomDesc: 'A TV Remote lies on the table in the centre of the room.'
-        //}
     },
 
     init: function (options) {
@@ -165,6 +147,8 @@
                 item.availableMsg = options.availableMsg;
                 item.buildMsg = options.buildMsg;
                 item.maxMsg = (options.maxMsg != undefined) ? options.maxMsg : "You cannot have any more of these.";
+            } else if (type == "food") {
+                item.heal = (options.heal != undefined) ? options.heal : 1;
             }
 
             // Create Items

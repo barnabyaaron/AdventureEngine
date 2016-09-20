@@ -68,25 +68,25 @@
         // Exits
         var northExit = activeRoom.exits['north'];
         if (northExit == undefined) northExit = 'None';
-        else if (northExit.visited != undefined && northExit.visited) northExit = northExit.name;
+        else if (northExit.room.visited != undefined && northExit.room.visited) northExit = northExit.room.name;
         else northExit = 'Unknown';
         $('<div>').addClass('roomExitItem').html('<b>North</b> - ' + northExit).appendTo('#gameRoomPanel');
 
         var eastExit = activeRoom.exits['east'];
         if (eastExit == undefined) eastExit = 'None';
-        else if (eastExit.visited != undefined && eastExit.visited) eastExit = eastExit.name;
+        else if (eastExit.room.visited != undefined && eastExit.room.visited) eastExit = eastExit.room.name;
         else eastExit = 'Unknown';
         $('<div>').addClass('roomExitItem').html('<b>East</b> - ' + eastExit).appendTo('#gameRoomPanel');
 
         var southExit = activeRoom.exits['south'];
         if (southExit == undefined) southExit = 'None';
-        else if (southExit.visited != undefined && southExit.visited) southExit = southExit.name;
+        else if (southExit.room.visited != undefined && southExit.room.visited) southExit = southExit.room.name;
         else southExit = 'Unknown';
         $('<div>').addClass('roomExitItem').html('<b>South</b> - ' + southExit).appendTo('#gameRoomPanel');
 
         var westExit = activeRoom.exits['west'];
         if (westExit == undefined) westExit = 'None';
-        else if (westExit.visited != undefined && westExit.visited) westExit = westExit.name;
+        else if (westExit.room.visited != undefined && westExit.room.visited) westExit = westExit.room.name;
         else westExit = 'Unknown';
         $('<div>').addClass('roomExitItem').html('<b>West</b> - ' + westExit).appendTo('#gameRoomPanel');
     },
@@ -96,7 +96,7 @@
         
         if (direction == "back") {
             if (Story.previousRoom == null) {
-                Notifications.notify("There is no room to go back too.");
+                Notifications.notify("There is nowhere to go back too.");
                 return;
             }
 
@@ -127,10 +127,15 @@
             if (exitRoom.canEnter) {
                 var curRoom = activeRoom;
 
+                if (activeRoom.exits[direction].onChange != undefined && typeof activeRoom.exits[direction].onChange == 'function') {
+                    var result = activeRoom.exits[direction].onChange();
+                    if (!result) {
+                        return;
+                    }
+                }
+
                 curRoom.triggerExit();
-
                 Notifications.clear(Commands.LAST_COMMAND); // Clear Notifications
-
                 Story.setRoom(exitRoom);
 
                 Story.previousRoom = curRoom;

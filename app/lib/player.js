@@ -105,9 +105,9 @@
 
             if (qty > 0) {
                 if (qty > 1) {
-                    $('<span>').addClass('inventoryItem').text(item.name + ' ' + flag + '[' + qty + ']').appendTo(invPanel);
+                    $('<div>').addClass('inventoryItem').text(item.name + ' ' + flag + '[' + qty + ']').appendTo(invPanel);
                 } else {
-                    $('<span>').addClass('inventoryItem').text(item.name + ' ' + flag).appendTo(invPanel);
+                    $('<div>').addClass('inventoryItem').text(item.name + ' ' + flag).appendTo(invPanel);
                 }
 
                 itemCount++;
@@ -115,7 +115,7 @@
         }
 
         if (itemCount == 0) {
-            $('<span>').addClass('inventoryItem').text('Empty').appendTo(invPanel);
+            $('<div>').addClass('inventoryItem').text('Empty').appendTo(invPanel);
         }
         
     },
@@ -159,7 +159,54 @@
     },
 
     medsHeal: function () {
-        return World.MEDS_HEAL;
+        return Player.MEDS_HEAL;
+    },
+
+    useItem: function (item) {
+        if (item) {
+            if (typeof item == 'string') {
+                item = Items.getUnknownItem(item);
+            }
+
+            if (typeof item == 'object') {
+                if (Player.inventory[item.id]) {
+                    if (item.use != undefined) {
+                        var have = Player.inventory[item.id];
+
+                        var used = item.use(); // Run use function
+
+                        if (used) {
+                            // Remove Item
+                            $SM.set('inventory["' + item.id + '"]', (have - 1));
+                        }
+                    } else {
+                        Notifications.notify("You cannot use that");
+                    }
+                } else {
+                    Notifications.notify("You don't have that item");
+                }
+            }
+        }
+    },
+
+    lookAtItem: function (item) {
+        if (item) {
+            if (typeof item == 'string') {
+                item = Items.getUnknownItem(item);
+            }
+
+            if (typeof item == 'object') {
+                if (Player.inventory[item.id]) {
+                    if (item.desc != undefined) {
+                        Notifications.notify(item.desc);
+                    } else {
+                        Notifications.notify("There is nothing to say about that");
+                    }
+                } else {
+                    Notifications.notify("You don't have that item to look at");
+                }
+            }
+        }
     },
 
     eatFood: function (item) {
@@ -171,14 +218,24 @@
             if (typeof item == 'object' && item.type == 'food') {
                 if (Player.inventory[item.id]) {
                     var have = Player.inventory[item.id];
+                    var heal = (item.heal != undefined) ? item.heal : 1;
+                    var healthRequired = Player.getMaxHealth() - Player.health;
+
+                    // Check if need to heal
+                    if (healthRequired == 0) {
+                        // Cannot heal
+                        Notifications.notify("You don't need to heal at full health");
+                        return;
+                    } else if (heal > (healthRequired)) {
+                        heal = healthRequired;
+                    }
 
                     $SM.set('inventory["' + item.id + '"]', (have - 1));
 
                     // Heal
-                    var heal = (item.heal != undefined) ? item.heal : 1;
                     Player.setHp((Player.health + heal));
 
-                    Notifications.notify("You eat " + item.name);
+                    Notifications.notify("You eat " + item.name + " (heal " + heal + " hearts)");
                 } else {
                     Notifications.notify("You have no " + item.name + " to eat");
                 }

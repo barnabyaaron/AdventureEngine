@@ -74,7 +74,7 @@
             if (Commands.triggerCheatCommands(command)) { return; }
         }
         
-        cmdSplit = command.split(" ");
+        var cmdSplit = command.split(" ");
         
         switch (cmdSplit[0]) {
             case "go":
@@ -98,13 +98,13 @@
                 return Commands.triggerGo("west");
 
             case "look":
-                return Commands.triggerLook();
+                return Commands.triggerLook(command);
 
             case "use":
-                return command.triggerUse(command);
+                return Commands.triggerUse(command);
 
             case "eat":
-                return command.triggerEat(command);
+                return Commands.triggerEat(command);
 
             default:
                 return Commands.triggerInvalidCommand();
@@ -123,6 +123,13 @@
             case "trigger event":
                 Events.triggerEvent();
                 return true;
+            case "trigger room event":
+                var room = Room.getRoom(Story.activeRoom);
+                if (room) {
+                    Events.triggerRoomEvent(room.Events);
+                    return true;
+                }
+                break;
             case "give item":
                 Notifications.notify("What Item do you want ?");
 
@@ -147,7 +154,7 @@
 
         var item = Items.getUnknownItem(itemName);
         if (item != null) {
-            // @TODO Use item
+            Player.useItem(item);
         }
     },
 
@@ -173,8 +180,21 @@
         }
     },
 
-    triggerLook: function() {
-        Story.look();
+    triggerLook: function (command) {
+        var cmdSplit = command.split(" ");
+
+        if (cmdSplit[1] == 'at') {
+            var itemName = command.replace("look at ", "");
+            var item = Items.getUnknownItem(itemName);
+
+            if (item != null) {
+                Player.lookAtItem(item);
+            } else {
+                Notifications.notify("No such item.");
+            }
+        } else {
+            Story.look();
+        }
     },
 
     handleStateUpdates: function (e) { }

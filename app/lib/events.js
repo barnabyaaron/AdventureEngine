@@ -58,6 +58,10 @@ var Events = {
 
     // Load an event scene
     loadScene: function (name) {
+        if (name == 'end') {
+            return Events.endEvent();
+        }
+
         Engine.log('loading scene: ' + name);
         Events.activeScene = name;
         var scene = Events.activeEvent().scenes[name];
@@ -69,7 +73,7 @@ var Events = {
 
         // Notify the scene change
         if (scene.notification) {
-            Notifications.notify(null, scene.notification);
+            Notifications.notify(scene.notification);
         }
 
         // Scene reward
@@ -641,7 +645,7 @@ var Events = {
 
         // Notification
         if (info.notification) {
-            Notifications.notify(null, info.notification);
+            Notifications.notify(info.notification);
         }
 
         // Next Scene
@@ -759,8 +763,7 @@ var Events = {
             Engine.keyLock = false;
             Button.saveCooldown = true;
 
-            // Force refocus on the body. I hate you, IE.
-            $('body').focus();
+            Engine.autoFocus();
         });
     },
 
